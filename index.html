@@ -1,0 +1,2667 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>InvestIQ — AI-Powered Investment Assistant</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      --gold: #F5C842;
+      --gold-light: #FFE580;
+      --emerald: #00D97E;
+      --sky: #38BFFF;
+      --coral: #FF6B6B;
+      --bg: #060A12;
+      --bg2: #0C1220;
+      --bg3: #111927;
+      --text: #EEF2FF;
+      --muted: #7A8BA0;
+      --border: rgba(255, 255, 255, 0.07);
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      overflow-x: hidden;
+    }
+
+    /* ── NOISE OVERLAY ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 9999;
+      opacity: 0.35;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1.2rem 5vw;
+      background: rgba(6, 10, 18, 0.7);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-logo {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 1.4rem;
+      letter-spacing: -0.03em;
+      background: linear-gradient(90deg, var(--gold), var(--emerald));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 2rem;
+      list-style: none;
+    }
+
+    .nav-links a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+      transition: color 0.25s;
+    }
+
+    .nav-links a:hover {
+      color: var(--text);
+    }
+
+    .nav-cta {
+      background: var(--gold);
+      color: var(--bg);
+      padding: 0.55rem 1.4rem;
+      border-radius: 100px;
+      font-weight: 700;
+      font-size: 0.85rem;
+      text-decoration: none;
+      letter-spacing: 0.02em;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .nav-cta:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(245, 200, 66, 0.35);
+    }
+
+    /* ── HERO ── */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 8rem 5vw 6rem;
+      position: relative;
+      overflow: hidden;
+      text-align: center;
+    }
+
+    /* Animated gradient orbs */
+    .orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.18;
+      animation: drift 12s ease-in-out infinite alternate;
+    }
+
+    .orb-1 {
+      width: 600px;
+      height: 600px;
+      background: var(--gold);
+      top: -150px;
+      left: -100px;
+      animation-delay: 0s;
+    }
+
+    .orb-2 {
+      width: 500px;
+      height: 500px;
+      background: var(--emerald);
+      bottom: -100px;
+      right: -80px;
+      animation-delay: -4s;
+    }
+
+    .orb-3 {
+      width: 350px;
+      height: 350px;
+      background: var(--sky);
+      top: 40%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      animation-delay: -8s;
+    }
+
+    @keyframes drift {
+      from {
+        transform: translate(0, 0) scale(1);
+      }
+
+      to {
+        transform: translate(40px, 30px) scale(1.1);
+      }
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(245, 200, 66, 0.12);
+      border: 1px solid rgba(245, 200, 66, 0.25);
+      color: var(--gold);
+      font-size: 0.8rem;
+      font-weight: 600;
+      padding: 0.4rem 1rem;
+      border-radius: 100px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 1.8rem;
+      animation: fadeUp 0.8s ease both;
+    }
+
+    .hero-badge span {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--gold);
+      display: inline-block;
+      animation: pulse 1.5s ease infinite;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+
+      50% {
+        opacity: 0.4;
+        transform: scale(0.7);
+      }
+    }
+
+    h1 {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(2.8rem, 6vw, 5.5rem);
+      font-weight: 800;
+      line-height: 1.05;
+      letter-spacing: -0.04em;
+      max-width: 900px;
+      animation: fadeUp 0.8s 0.15s ease both;
+    }
+
+    h1 .accent-gold {
+      color: var(--gold);
+    }
+
+    h1 .accent-green {
+      color: var(--emerald);
+    }
+
+    .hero-sub {
+      font-size: clamp(1rem, 1.5vw, 1.2rem);
+      color: var(--muted);
+      font-weight: 300;
+      line-height: 1.7;
+      max-width: 580px;
+      margin: 1.6rem auto 2.8rem;
+      animation: fadeUp 0.8s 0.3s ease both;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      animation: fadeUp 0.8s 0.45s ease both;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--gold), #E8A800);
+      color: var(--bg);
+      padding: 0.85rem 2.2rem;
+      border-radius: 100px;
+      border: none;
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 700;
+      font-size: 1rem;
+      letter-spacing: -0.01em;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 16px 40px rgba(245, 200, 66, 0.4);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--text);
+      padding: 0.85rem 2.2rem;
+      border-radius: 100px;
+      border: 1px solid var(--border);
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 500;
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: border-color 0.2s, background 0.2s;
+    }
+
+    .btn-ghost:hover {
+      border-color: rgba(255, 255, 255, 0.2);
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    /* Live ticker strip */
+    .ticker-wrap {
+      width: 100%;
+      overflow: hidden;
+      background: rgba(255, 255, 255, 0.03);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      padding: 0.7rem 0;
+      margin-top: 4rem;
+      position: relative;
+      z-index: 2;
+      animation: fadeUp 0.8s 0.6s ease both;
+    }
+
+    .ticker {
+      display: flex;
+      gap: 3rem;
+      width: max-content;
+      animation: ticker 25s linear infinite;
+    }
+
+    @keyframes ticker {
+      from {
+        transform: translateX(0);
+      }
+
+      to {
+        transform: translateX(-50%);
+      }
+    }
+
+    .tick {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-size: 0.85rem;
+      white-space: nowrap;
+    }
+
+    .tick-name {
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .tick-price {
+      color: var(--muted);
+    }
+
+    .tick-up {
+      color: var(--emerald);
+      font-weight: 600;
+    }
+
+    .tick-down {
+      color: var(--coral);
+      font-weight: 600;
+    }
+
+    @keyframes fadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(24px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* ── STATS BAR ── */
+    .stats-bar {
+      display: flex;
+      justify-content: center;
+      gap: 2px;
+      flex-wrap: wrap;
+      padding: 3rem 5vw;
+      background: var(--bg2);
+    }
+
+    .stat-card {
+      flex: 1;
+      min-width: 180px;
+      max-width: 260px;
+      padding: 1.8rem 1.5rem;
+      text-align: center;
+      border: 1px solid var(--border);
+      position: relative;
+      overflow: hidden;
+      background: var(--bg3);
+      transition: transform 0.2s;
+    }
+
+    .stat-card:first-child {
+      border-radius: 16px 0 0 16px;
+    }
+
+    .stat-card:last-child {
+      border-radius: 0 16px 16px 0;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-4px);
+      z-index: 1;
+    }
+
+    .stat-card::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--gold), transparent);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .stat-card:hover::after {
+      opacity: 1;
+    }
+
+    .stat-num {
+      font-family: 'Syne', sans-serif;
+      font-size: 2.4rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--gold), var(--emerald));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .stat-label {
+      color: var(--muted);
+      font-size: 0.85rem;
+      margin-top: 0.4rem;
+    }
+
+    /* ── SECTION SHARED ── */
+    section {
+      padding: 6rem 5vw;
+    }
+
+    .section-tag {
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 1rem;
+    }
+
+    .section-title {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: clamp(1.8rem, 3vw, 2.8rem);
+      letter-spacing: -0.03em;
+      line-height: 1.15;
+      max-width: 700px;
+    }
+
+    .section-sub {
+      color: var(--muted);
+      font-weight: 300;
+      line-height: 1.7;
+      max-width: 540px;
+      margin-top: 0.8rem;
+      font-size: 1.05rem;
+    }
+
+    /* ── FEATURES ── */
+    #features {
+      background: var(--bg2);
+    }
+
+    .features-header {
+      text-align: center;
+      margin-bottom: 4rem;
+    }
+
+    .features-header .section-title,
+    .features-header .section-sub {
+      max-width: 700px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .features-header .section-sub {
+      margin-top: 0.8rem;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .feat-card {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 2rem;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.3s, border-color 0.3s;
+      cursor: default;
+    }
+
+    .feat-card:hover {
+      transform: translateY(-6px);
+      border-color: rgba(255, 255, 255, 0.15);
+    }
+
+    .feat-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--icon-color, var(--gold)), transparent);
+    }
+
+    .feat-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+      margin-bottom: 1.2rem;
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .feat-title {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 1.1rem;
+      margin-bottom: 0.6rem;
+    }
+
+    .feat-desc {
+      color: var(--muted);
+      font-size: 0.92rem;
+      line-height: 1.6;
+    }
+
+    .feat-tag {
+      display: inline-block;
+      margin-top: 1rem;
+      padding: 0.3rem 0.8rem;
+      border-radius: 100px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    /* ── CHATBOT PREVIEW ── */
+    #demo {
+      background: var(--bg);
+    }
+
+    .demo-wrap {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 5rem;
+      align-items: center;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .chat-window {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      overflow: hidden;
+      box-shadow: 0 40px 80px rgba(0, 0, 0, 0.5);
+    }
+
+    .chat-topbar {
+      background: var(--bg3);
+      padding: 1rem 1.4rem;
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .chat-dots {
+      display: flex;
+      gap: 6px;
+    }
+
+    .chat-dots span {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+
+    .chat-dots span:nth-child(1) {
+      background: #FF5F57;
+    }
+
+    .chat-dots span:nth-child(2) {
+      background: #FEBC2E;
+    }
+
+    .chat-dots span:nth-child(3) {
+      background: #28C840;
+    }
+
+    .chat-title {
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-left: 0.5rem;
+    }
+
+    .chat-status {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.75rem;
+      color: var(--emerald);
+    }
+
+    .chat-status span {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--emerald);
+      animation: pulse 1.5s infinite;
+    }
+
+    .chat-body {
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      min-height: 340px;
+    }
+
+    .msg {
+      max-width: 80%;
+      padding: 0.8rem 1.1rem;
+      border-radius: 16px;
+      font-size: 0.9rem;
+      line-height: 1.5;
+      animation: fadeUp 0.5s ease both;
+    }
+
+    .msg-bot {
+      background: var(--bg3);
+      color: var(--text);
+      border: 1px solid var(--border);
+      align-self: flex-start;
+      border-radius: 4px 16px 16px 16px;
+    }
+
+    .msg-user {
+      background: linear-gradient(135deg, var(--gold), #D4A000);
+      color: var(--bg);
+      align-self: flex-end;
+      border-radius: 16px 4px 16px 16px;
+      font-weight: 500;
+    }
+
+    .msg-bot .msg-label {
+      font-size: 0.7rem;
+      color: var(--emerald);
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      margin-bottom: 0.3rem;
+      text-transform: uppercase;
+    }
+
+    .chat-input-bar {
+      padding: 1rem 1.4rem;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+    }
+
+    .chat-input {
+      flex: 1;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      padding: 0.65rem 1.2rem;
+      color: var(--muted);
+      font-size: 0.88rem;
+      font-family: 'DM Sans', sans-serif;
+      outline: none;
+    }
+
+    .chat-send {
+      background: var(--gold);
+      border: none;
+      border-radius: 50%;
+      width: 38px;
+      height: 38px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      transition: transform 0.2s;
+    }
+
+    .chat-send:hover {
+      transform: scale(1.1);
+    }
+
+    /* ── STOCK CHART ── */
+    .chart-container {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 2rem;
+      overflow: hidden;
+    }
+
+    .chart-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .chart-stock {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 1.3rem;
+    }
+
+    .chart-price {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 1.6rem;
+      color: var(--emerald);
+    }
+
+    .chart-change {
+      font-size: 0.85rem;
+      color: var(--emerald);
+    }
+
+    svg.chart-svg {
+      width: 100%;
+      height: 180px;
+      display: block;
+    }
+
+    .chart-tabs {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .chart-tab {
+      padding: 0.3rem 0.9rem;
+      border-radius: 100px;
+      font-size: 0.78rem;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      transition: all 0.2s;
+    }
+
+    .chart-tab.active {
+      background: var(--gold);
+      color: var(--bg);
+      border-color: var(--gold);
+      font-weight: 700;
+    }
+
+    .risk-meter {
+      margin-top: 1.5rem;
+    }
+
+    .risk-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin-bottom: 0.4rem;
+    }
+
+    .risk-bar-bg {
+      background: rgba(255, 255, 255, 0.07);
+      border-radius: 100px;
+      height: 8px;
+      overflow: hidden;
+    }
+
+    .risk-bar-fill {
+      height: 100%;
+      border-radius: 100px;
+      background: linear-gradient(90deg, var(--emerald), var(--gold), var(--coral));
+      width: 62%;
+    }
+
+    /* ── HOW IT WORKS ── */
+    #how {
+      background: var(--bg2);
+    }
+
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 2rem;
+      max-width: 1100px;
+      margin: 3.5rem auto 0;
+      position: relative;
+    }
+
+    .steps::before {
+      content: '';
+      position: absolute;
+      top: 2.5rem;
+      left: 10%;
+      right: 10%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--border), var(--gold), var(--border), transparent);
+    }
+
+    .step {
+      text-align: center;
+      padding: 0.5rem;
+    }
+
+    .step-num {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--gold), #C88A00);
+      color: var(--bg);
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 1.2rem;
+      position: relative;
+      z-index: 1;
+      box-shadow: 0 0 0 6px rgba(245, 200, 66, 0.12);
+    }
+
+    .step-title {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 1rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .step-desc {
+      color: var(--muted);
+      font-size: 0.88rem;
+      line-height: 1.6;
+    }
+
+    /* ── TECH STACK ── */
+    #tech {
+      background: var(--bg);
+    }
+
+    .tech-center {
+      text-align: center;
+    }
+
+    .tech-badges {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 1rem;
+      max-width: 900px;
+      margin: 3rem auto 0;
+    }
+
+    .tech-badge {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      padding: 0.6rem 1.3rem;
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: border-color 0.25s, transform 0.2s;
+    }
+
+    .tech-badge:hover {
+      border-color: rgba(245, 200, 66, 0.4);
+      transform: translateY(-3px);
+    }
+
+    .tech-badge .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    /* ── TEAM ── */
+    #team {
+      background: var(--bg2);
+    }
+
+    .team-grid {
+      display: flex;
+      gap: 2rem;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-top: 3.5rem;
+    }
+
+    .team-card {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 2.5rem 2rem;
+      text-align: center;
+      min-width: 220px;
+      transition: transform 0.3s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .team-card:hover {
+      transform: translateY(-8px);
+    }
+
+    .team-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 50% 0%, rgba(245, 200, 66, 0.06), transparent 60%);
+    }
+
+    .team-avatar {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--gold), var(--emerald));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 1.4rem;
+      color: var(--bg);
+      margin: 0 auto 1.2rem;
+    }
+
+    .team-name {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 1.1rem;
+    }
+
+    .team-id {
+      color: var(--muted);
+      font-size: 0.82rem;
+      margin-top: 0.3rem;
+      font-style: italic;
+    }
+
+    .team-role {
+      margin-top: 0.8rem;
+      display: inline-block;
+      padding: 0.25rem 0.8rem;
+      border-radius: 100px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      background: rgba(245, 200, 66, 0.1);
+      color: var(--gold);
+      border: 1px solid rgba(245, 200, 66, 0.2);
+    }
+
+    .team-guide {
+      background: rgba(0, 217, 126, 0.08);
+      color: var(--emerald);
+      border-color: rgba(0, 217, 126, 0.2);
+    }
+
+    /* ── CTA ── */
+    .cta-section {
+      background: var(--bg);
+      padding: 7rem 5vw;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .cta-section .orb {
+      opacity: 0.1;
+    }
+
+    .cta-title {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: clamp(2rem, 4vw, 3.5rem);
+      letter-spacing: -0.04em;
+      margin-bottom: 1.2rem;
+    }
+
+    .cta-title span {
+      color: var(--gold);
+    }
+
+    .cta-sub {
+      color: var(--muted);
+      font-size: 1.05rem;
+      max-width: 480px;
+      margin: 0 auto 2.5rem;
+      line-height: 1.7;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      background: var(--bg2);
+      border-top: 1px solid var(--border);
+      padding: 2rem 5vw;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: gap;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
+    footer .logo {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 1.1rem;
+      background: linear-gradient(90deg, var(--gold), var(--emerald));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 768px) {
+      .demo-wrap {
+        grid-template-columns: 1fr;
+        gap: 3rem;
+      }
+
+      .steps::before {
+        display: none;
+      }
+
+      nav .nav-links {
+        display: none;
+      }
+    }
+
+    /* Scroll animation */
+    .reveal {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ── SYNOPSIS MODAL ── */
+    .synopsis-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 10000;
+      background: rgba(6, 10, 18, 0.92);
+      backdrop-filter: blur(16px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.35s ease;
+    }
+    .synopsis-overlay.open {
+      opacity: 1;
+      pointer-events: all;
+    }
+    .synopsis-modal {
+      background: var(--bg2);
+      border: 1px solid rgba(245, 200, 66, 0.18);
+      border-radius: 28px;
+      max-width: 820px;
+      width: 100%;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 40px 100px rgba(0,0,0,0.7), 0 0 0 1px rgba(245,200,66,0.08);
+      transform: translateY(30px) scale(0.97);
+      transition: transform 0.35s ease;
+      overflow: hidden;
+    }
+    .synopsis-overlay.open .synopsis-modal {
+      transform: translateY(0) scale(1);
+    }
+    .synopsis-header {
+      padding: 1.8rem 2rem 1.4rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 1rem;
+      background: var(--bg3);
+      flex-shrink: 0;
+    }
+    .synopsis-header-left {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .synopsis-header-icon {
+      width: 46px;
+      height: 46px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, rgba(245,200,66,0.2), rgba(0,217,126,0.12));
+      border: 1px solid rgba(245,200,66,0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.3rem;
+      flex-shrink: 0;
+    }
+    .synopsis-header-text .stag {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 0.2rem;
+    }
+    .synopsis-header-text h2 {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.15rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: var(--text);
+      line-height: 1.25;
+    }
+    .synopsis-close {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border);
+      border-radius: 50%;
+      width: 36px;
+      height: 36px;
+      cursor: pointer;
+      color: var(--muted);
+      font-size: 1.1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s, color 0.2s;
+      flex-shrink: 0;
+    }
+    .synopsis-close:hover {
+      background: rgba(255,255,255,0.1);
+      color: var(--text);
+    }
+    /* Tab nav */
+    .synopsis-tabs {
+      display: flex;
+      gap: 0;
+      padding: 0 2rem;
+      background: var(--bg3);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+      overflow-x: auto;
+    }
+    .syn-tab {
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      color: var(--muted);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.82rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      padding: 0.85rem 1.1rem;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: color 0.2s, border-color 0.2s;
+    }
+    .syn-tab.active {
+      color: var(--gold);
+      border-bottom-color: var(--gold);
+    }
+    .syn-tab:hover:not(.active) {
+      color: var(--text);
+    }
+    /* Body scroll */
+    .synopsis-body {
+      overflow-y: auto;
+      padding: 2rem;
+      flex: 1;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(245,200,66,0.3) transparent;
+    }
+    .synopsis-body::-webkit-scrollbar { width: 5px; }
+    .synopsis-body::-webkit-scrollbar-track { background: transparent; }
+    .synopsis-body::-webkit-scrollbar-thumb { background: rgba(245,200,66,0.3); border-radius: 10px; }
+    /* Tab panels */
+    .syn-panel { display: none; animation: fadeUp 0.3s ease both; }
+    .syn-panel.active { display: block; }
+    /* Section blocks inside synopsis */
+    .syn-section {
+      margin-bottom: 2rem;
+    }
+    .syn-section-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 1rem;
+      font-weight: 800;
+      color: var(--gold);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .syn-section-title::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(90deg, rgba(245,200,66,0.3), transparent);
+    }
+    .syn-text {
+      color: #C8D4E0;
+      font-size: 0.93rem;
+      line-height: 1.8;
+      font-weight: 300;
+    }
+    .syn-text strong {
+      color: var(--text);
+      font-weight: 600;
+    }
+    /* Cover card */
+    .syn-cover {
+      background: linear-gradient(135deg, rgba(245,200,66,0.07) 0%, rgba(0,217,126,0.05) 100%);
+      border: 1px solid rgba(245,200,66,0.15);
+      border-radius: 20px;
+      padding: 2.2rem;
+      text-align: center;
+      margin-bottom: 2rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .syn-cover::before {
+      content:'';
+      position: absolute;
+      top: -60px; right: -60px;
+      width: 200px; height: 200px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(245,200,66,0.08), transparent 70%);
+    }
+    .syn-cover-uni {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 0.8rem;
+    }
+    .syn-cover-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: var(--text);
+      line-height: 1.3;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.5rem;
+    }
+    .syn-cover-sub {
+      color: var(--muted);
+      font-size: 0.85rem;
+      margin-bottom: 1.5rem;
+    }
+    .syn-author-row {
+      display: flex;
+      justify-content: center;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+      margin-bottom: 1.2rem;
+    }
+    .syn-author-chip {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      padding: 0.45rem 1rem;
+      font-size: 0.82rem;
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .syn-author-chip span {
+      font-size: 0.68rem;
+      color: var(--muted);
+      font-weight: 300;
+    }
+    .syn-guide-chip {
+      background: rgba(245,200,66,0.07);
+      border: 1px solid rgba(245,200,66,0.2);
+      border-radius: 100px;
+      padding: 0.45rem 1.2rem;
+      font-size: 0.82rem;
+      color: var(--gold);
+    }
+    /* Objectives list */
+    .syn-obj-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.7rem;
+    }
+    .syn-obj-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.8rem;
+      color: #C8D4E0;
+      font-size: 0.92rem;
+      line-height: 1.6;
+    }
+    .syn-obj-list li::before {
+      content: '→';
+      color: var(--emerald);
+      font-weight: 700;
+      flex-shrink: 0;
+      margin-top: 0.05rem;
+    }
+    /* Methodology flow */
+    .syn-method-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1rem;
+    }
+    .syn-method-card {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.2rem 1.4rem;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+    .syn-method-card:hover {
+      border-color: rgba(245,200,66,0.25);
+      transform: translateY(-3px);
+    }
+    .syn-method-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--m-color, var(--gold)), transparent);
+    }
+    .syn-method-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--m-color, var(--gold));
+      margin-bottom: 0.4rem;
+    }
+    .syn-method-name {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: var(--text);
+      margin-bottom: 0.4rem;
+    }
+    .syn-method-desc {
+      font-size: 0.82rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+    /* References */
+    .syn-ref-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.9rem;
+    }
+    .syn-ref-item {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1rem 1.2rem;
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+      transition: border-color 0.2s;
+    }
+    .syn-ref-item:hover {
+      border-color: rgba(56, 191, 255, 0.25);
+    }
+    .syn-ref-num {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background: rgba(56, 191, 255, 0.12);
+      border: 1px solid rgba(56,191,255,0.2);
+      color: var(--sky);
+      font-size: 0.72rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .syn-ref-content {}
+    .syn-ref-authors {
+      font-size: 0.78rem;
+      color: var(--gold);
+      font-weight: 600;
+      margin-bottom: 0.2rem;
+    }
+    .syn-ref-title {
+      font-size: 0.88rem;
+      color: var(--text);
+      font-weight: 500;
+      margin-bottom: 0.2rem;
+      line-height: 1.4;
+    }
+    .syn-ref-venue {
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+    .syn-ref-link {
+      font-size: 0.75rem;
+      color: var(--sky);
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      margin-top: 0.3rem;
+      opacity: 0.8;
+      transition: opacity 0.2s;
+    }
+    .syn-ref-link:hover { opacity: 1; }
+    /* Footer bar */
+    .synopsis-footer {
+      padding: 1rem 2rem;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-shrink: 0;
+      background: var(--bg3);
+    }
+    .synopsis-footer-info {
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+    .synopsis-footer-info strong {
+      color: var(--gold);
+      font-weight: 600;
+    }
+    .syn-dl-btn {
+      background: linear-gradient(135deg, var(--gold), #E8A800);
+      color: var(--bg);
+      border: none;
+      border-radius: 100px;
+      padding: 0.55rem 1.3rem;
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 700;
+      font-size: 0.82rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .syn-dl-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(245,200,66,0.35);
+    }
+    @media (max-width: 600px) {
+      .synopsis-modal { border-radius: 20px; }
+      .synopsis-body { padding: 1.4rem; }
+      .synopsis-header { padding: 1.3rem; }
+      .synopsis-footer { flex-direction: column; align-items: flex-start; gap: 0.7rem; }
+    }
+
+    /* ── AUTH MODAL ── */
+    .auth-overlay {
+      position: fixed; inset: 0; z-index: 20000;
+      background: rgba(6,10,18,0.92); backdrop-filter: blur(16px);
+      display: flex; align-items: center; justify-content: center; padding: 1.5rem;
+      opacity: 0; pointer-events: none; visibility: hidden;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+    .auth-overlay.open { opacity: 1; pointer-events: all; visibility: visible; }
+    .auth-modal {
+      background: var(--bg2); border: 1px solid rgba(245,200,66,0.2);
+      border-radius: 24px; max-width: 440px; width: 100%;
+      padding: 2.2rem; position: relative;
+      box-shadow: 0 40px 80px rgba(0,0,0,0.7);
+      transform: translateY(24px) scale(0.97);
+      transition: transform 0.3s ease;
+    }
+    .auth-overlay.open .auth-modal { transform: translateY(0) scale(1); }
+    .auth-modal-logo {
+      font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.2rem;
+      background: linear-gradient(90deg, var(--gold), var(--emerald));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      margin-bottom: 0.3rem;
+    }
+    .auth-modal-sub { color: var(--muted); font-size: 0.85rem; margin-bottom: 1.5rem; }
+    .auth-tabs { display: flex; gap: 0; background: var(--bg3); border-radius: 12px; padding: 4px; margin-bottom: 1.6rem; }
+    .auth-tab {
+      flex: 1; background: none; border: none; border-radius: 9px;
+      color: var(--muted); font-family: 'DM Sans', sans-serif; font-size: 0.88rem;
+      font-weight: 600; padding: 0.55rem; cursor: pointer; transition: all 0.2s;
+    }
+    .auth-tab.active { background: var(--bg2); color: var(--text); box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+    .auth-form { display: none; flex-direction: column; gap: 0.9rem; }
+    .auth-form.active { display: flex; }
+    .auth-label { font-size: 0.8rem; font-weight: 600; color: var(--muted); margin-bottom: 0.25rem; display: block; }
+    .auth-input {
+      width: 100%; background: var(--bg3); border: 1px solid var(--border);
+      border-radius: 12px; padding: 0.75rem 1rem; color: var(--text);
+      font-family: 'DM Sans', sans-serif; font-size: 0.9rem;
+      outline: none; transition: border-color 0.2s;
+    }
+    .auth-input:focus { border-color: rgba(245,200,66,0.5); }
+    .auth-input::placeholder { color: var(--muted); }
+    .auth-consent { display: flex; gap: 0.6rem; align-items: flex-start; }
+    .auth-consent input[type=checkbox] { margin-top: 3px; accent-color: var(--gold); flex-shrink: 0; }
+    .auth-consent label { font-size: 0.78rem; color: var(--muted); line-height: 1.5; }
+    .auth-consent a { color: var(--gold); text-decoration: none; }
+    .auth-btn {
+      background: linear-gradient(135deg, var(--gold), #E8A800); color: var(--bg);
+      border: none; border-radius: 100px; padding: 0.8rem; font-family: 'DM Sans', sans-serif;
+      font-weight: 700; font-size: 0.95rem; cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s; margin-top: 0.2rem;
+    }
+    .auth-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(245,200,66,0.4); }
+    .auth-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+    .auth-error { color: var(--coral); font-size: 0.82rem; text-align: center; display: none; }
+    .auth-error.visible { display: block; }
+    .auth-close {
+      position: absolute; top: 1.2rem; right: 1.2rem;
+      background: none; border: none; color: var(--muted); font-size: 1.2rem; cursor: pointer;
+      transition: color 0.2s;
+    }
+    .auth-close:hover { color: var(--text); }
+
+    /* ── NAV AUTH BUTTONS ── */
+    .nav-auth { display: flex; align-items: center; gap: 0.7rem; }
+    .nav-auth-btn {
+      background: none; border: 1px solid var(--border); border-radius: 100px;
+      color: var(--muted); font-family: 'DM Sans', sans-serif;
+      font-size: 0.82rem; font-weight: 500; padding: 0.45rem 1.1rem;
+      cursor: pointer; transition: all 0.2s; white-space: nowrap;
+    }
+    .nav-auth-btn:hover { border-color: rgba(255,255,255,0.2); color: var(--text); }
+    .nav-auth-btn.primary {
+      background: var(--gold); border-color: var(--gold); color: var(--bg); font-weight: 700;
+    }
+    .nav-auth-btn.primary:hover { box-shadow: 0 6px 18px rgba(245,200,66,0.4); transform: translateY(-1px); }
+    .nav-user-chip {
+      display: none; align-items: center; gap: 0.5rem;
+      background: var(--bg3); border: 1px solid var(--border);
+      border-radius: 100px; padding: 0.4rem 1rem 0.4rem 0.5rem;
+      font-size: 0.82rem; font-weight: 600; color: var(--text);
+    }
+    .nav-user-chip.visible { display: flex; }
+    .nav-user-avatar {
+      width: 26px; height: 26px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--gold), var(--emerald));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.75rem; font-weight: 800; color: var(--bg);
+    }
+    .nav-logout {
+      background: none; border: none; color: var(--muted); font-size: 0.78rem;
+      cursor: pointer; padding: 0.4rem 0.8rem; border-radius: 100px;
+      border: 1px solid transparent; transition: all 0.2s; font-family: 'DM Sans', sans-serif;
+    }
+    .nav-logout:hover { border-color: var(--coral); color: var(--coral); }
+
+    /* ── EMAIL BANNER ── */
+    .email-banner {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 15000;
+      background: var(--bg2); border-top: 1px solid rgba(245,200,66,0.2);
+      padding: 1rem 5vw; display: none; align-items: center;
+      justify-content: space-between; gap: 1.5rem; flex-wrap: wrap;
+      box-shadow: 0 -8px 32px rgba(0,0,0,0.4);
+      animation: slideUp 0.4s ease both;
+    }
+    .email-banner.visible { display: flex; }
+    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+    .email-banner-text { flex: 1; min-width: 240px; }
+    .email-banner-text strong { color: var(--gold); }
+    .email-banner-text p { color: var(--muted); font-size: 0.82rem; margin-top: 0.2rem; }
+    .email-banner-form { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; }
+    .email-banner-input {
+      background: var(--bg3); border: 1px solid var(--border); border-radius: 100px;
+      padding: 0.6rem 1.2rem; color: var(--text); font-family: 'DM Sans', sans-serif;
+      font-size: 0.88rem; outline: none; transition: border-color 0.2s; min-width: 220px;
+    }
+    .email-banner-input:focus { border-color: rgba(245,200,66,0.4); }
+    .email-banner-submit {
+      background: linear-gradient(135deg, var(--gold), #E8A800); color: var(--bg);
+      border: none; border-radius: 100px; padding: 0.6rem 1.4rem;
+      font-family: 'DM Sans', sans-serif; font-weight: 700; font-size: 0.88rem;
+      cursor: pointer; white-space: nowrap; transition: transform 0.2s;
+    }
+    .email-banner-submit:hover { transform: translateY(-1px); }
+    .email-banner-consent { width: 100%; display: flex; align-items: center; gap: 0.5rem; }
+    .email-banner-consent input { accent-color: var(--gold); }
+    .email-banner-consent label { font-size: 0.75rem; color: var(--muted); }
+    .email-banner-close {
+      background: none; border: none; color: var(--muted); font-size: 1.1rem;
+      cursor: pointer; padding: 0.3rem; transition: color 0.2s; flex-shrink: 0;
+    }
+    .email-banner-close:hover { color: var(--text); }
+    .email-banner-success { color: var(--emerald); font-size: 0.88rem; font-weight: 600; display: none; }
+    .email-banner-success.visible { display: block; }
+  </style>
+</head>
+
+<body>
+
+  <!-- ═══════════════════════════════════════ AUTH MODAL ═══════════════════════════════════════ -->
+  <div class="auth-overlay" id="authOverlay" onclick="_overlayClose(event,'authOverlay')">
+    <div class="auth-modal">
+      <button class="auth-close" onclick="closeAuth()" title="Close">✕</button>
+      <div class="auth-modal-logo">InvestIQ ⚡</div>
+      <div class="auth-modal-sub" id="authSub">Access your financial dashboard</div>
+
+      <div class="auth-tabs">
+        <button class="auth-tab active" id="tabLogin" onclick="switchAuthTab('login')">Log In</button>
+        <button class="auth-tab" id="tabSignup" onclick="switchAuthTab('signup')">Sign Up</button>
+      </div>
+
+      <!-- LOGIN FORM -->
+      <form class="auth-form active" id="formLogin" onsubmit="submitLogin(event)">
+        <div>
+          <label class="auth-label">Email address</label>
+          <input class="auth-input" id="loginEmail" type="email" placeholder="you@example.com" required autocomplete="email">
+        </div>
+        <div>
+          <label class="auth-label">Password</label>
+          <input class="auth-input" id="loginPassword" type="password" placeholder="Your password" required autocomplete="current-password">
+        </div>
+        <div class="auth-error" id="loginError"></div>
+        <button class="auth-btn" type="submit" id="loginBtn">Log In →</button>
+        <p style="text-align:center;font-size:0.8rem;color:var(--muted)">Don't have an account? <a href="#" style="color:var(--gold);" onclick="switchAuthTab('signup');return false;">Sign up</a></p>
+      </form>
+
+      <!-- SIGNUP FORM -->
+      <form class="auth-form" id="formSignup" onsubmit="submitSignup(event)">
+        <div>
+          <label class="auth-label">Full name</label>
+          <input class="auth-input" id="signupName" type="text" placeholder="Nikit Sharma" required autocomplete="name">
+        </div>
+        <div>
+          <label class="auth-label">Email address</label>
+          <input class="auth-input" id="signupEmail" type="email" placeholder="you@example.com" required autocomplete="email">
+        </div>
+        <div>
+          <label class="auth-label">Password <span style="color:var(--muted);font-weight:400">(min 6 chars)</span></label>
+          <input class="auth-input" id="signupPassword" type="password" placeholder="Choose a strong password" required autocomplete="new-password" minlength="6">
+        </div>
+        <div class="auth-consent">
+          <input type="checkbox" id="signupConsent" required>
+          <label for="signupConsent">I agree to InvestIQ's <a href="#" onclick="return false;">Privacy Policy</a> and consent to storing my data for personalised financial guidance. (Required)</label>
+        </div>
+        <div class="auth-error" id="signupError"></div>
+        <button class="auth-btn" type="submit" id="signupBtn">Create Account →</button>
+        <p style="text-align:center;font-size:0.8rem;color:var(--muted)">Already have an account? <a href="#" style="color:var(--gold);" onclick="switchAuthTab('login');return false;">Log in</a></p>
+      </form>
+    </div>
+  </div>
+
+  <!-- NAV -->
+  <nav>
+    <div class="nav-logo">InvestIQ ⚡</div>
+    <ul class="nav-links">
+      <li><a href="#features">Features</a></li>
+      <li><a href="#demo">Demo</a></li>
+      <li><a href="#how">How it Works</a></li>
+      <li><a href="#team">Team</a></li>
+    </ul>
+    <div class="nav-auth" id="navAuth">
+      <!-- Guest state -->
+      <div id="navGuest" style="display:flex;gap:0.7rem;align-items:center">
+        <button class="nav-auth-btn" id="navLoginBtn" onclick="openAuth('login')" title="Log In">Log In</button>
+        <button class="nav-auth-btn primary" id="navSignupBtn" onclick="openAuth('signup')" title="Sign Up">Sign Up</button>
+      </div>
+      <!-- Logged-in state (hidden until auth) -->
+      <div class="nav-user-chip" id="navUser">
+        <div class="nav-user-avatar" id="navAvatar">?</div>
+        <span id="navName">User</span>
+      </div>
+      <button class="nav-logout" id="navLogout" style="display:none" onclick="authLogout()">Log out</button>
+    </div>
+    <a href="chatbot.html" class="nav-cta" style="margin-left:0.5rem">💬 Launch Chatbot →</a>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+
+    <div class="hero-badge"><span></span>B.Tech Minor Project — Medicaps University</div>
+    <h1>Your <span class="accent-gold">AI-Powered</span><br>Investment <span class="accent-green">Co-Pilot</span></h1>
+    <p class="hero-sub">Predict market trends, analyse risk intelligently, and learn as you invest — all through one
+      conversational AI assistant.</p>
+    <div class="hero-actions">
+      <a href="chatbot.html" style="text-decoration:none"><button class="btn-primary">💬 Launch AI Chatbot</button></a>
+      <button class="btn-ghost" onclick="openSynopsis()">📄 Read Synopsis</button>
+    </div>
+
+    <!-- Ticker -->
+    <div class="ticker-wrap">
+      <div class="ticker" id="ticker">
+        <!-- filled by JS -->
+      </div>
+    </div>
+  </section>
+
+  <!-- STATS -->
+  <div class="stats-bar">
+    <div class="stat-card reveal">
+      <div class="stat-num">94.2%</div>
+      <div class="stat-label">LSTM Prediction Accuracy</div>
+    </div>
+    <div class="stat-card reveal">
+      <div class="stat-num">SHAP</div>
+      <div class="stat-label">Explainable AI Integration</div>
+    </div>
+    <div class="stat-card reveal">
+      <div class="stat-num">Real-Time</div>
+      <div class="stat-label">Market Data via yFinance</div>
+    </div>
+    <div class="stat-card reveal">
+      <div class="stat-num">360°</div>
+      <div class="stat-label">Risk + Learning + Prediction</div>
+    </div>
+  </div>
+
+  <!-- FEATURES -->
+  <section id="features">
+    <div class="features-header reveal">
+      <div class="section-tag">Core Features</div>
+      <div class="section-title">Everything a Smart Investor Needs</div>
+      <p class="section-sub">Built with deep learning, explainable AI, and conversational intelligence to transform how
+        you invest.</p>
+    </div>
+    <div class="features-grid">
+      <div class="feat-card reveal" style="--icon-color: var(--gold)">
+        <div class="feat-icon" style="color:var(--gold)">📈</div>
+        <div class="feat-title">Market Trend Prediction</div>
+        <div class="feat-desc">LSTM-based deep learning forecasts stock price movements by capturing long-term temporal
+          dependencies in historical financial data.</div>
+        <span class="feat-tag"
+          style="background:rgba(245,200,66,0.1);color:var(--gold);border:1px solid rgba(245,200,66,0.2)">TensorFlow /
+          Keras</span>
+      </div>
+      <div class="feat-card reveal" style="--icon-color: var(--coral)">
+        <div class="feat-icon" style="color:var(--coral)">🛡️</div>
+        <div class="feat-title">Quantitative Risk Analysis</div>
+        <div class="feat-desc">Compute volatility, Sharpe ratio, and confidence intervals. Personalised risk profiles
+          based on your investment goals and tolerance.</div>
+        <span class="feat-tag"
+          style="background:rgba(255,107,107,0.1);color:var(--coral);border:1px solid rgba(255,107,107,0.2)">Scikit-learn</span>
+      </div>
+      <div class="feat-card reveal" style="--icon-color: var(--sky)">
+        <div class="feat-icon" style="color:var(--sky)">🧠</div>
+        <div class="feat-title">Explainable AI Insights</div>
+        <div class="feat-desc">SHAP and LIME techniques reveal which historical factors drive every prediction, making
+          the model transparent and trustworthy.</div>
+        <span class="feat-tag"
+          style="background:rgba(56,191,255,0.1);color:var(--sky);border:1px solid rgba(56,191,255,0.2)">XAI: SHAP /
+          LIME</span>
+      </div>
+      <div class="feat-card reveal" style="--icon-color: var(--emerald)">
+        <div class="feat-icon" style="color:var(--emerald)">💬</div>
+        <div class="feat-title">AI Conversational Chatbot</div>
+        <div class="feat-desc">Ask anything in natural language. The chatbot understands context, answers financial
+          queries, and provides step-by-step educational guidance.</div>
+        <span class="feat-tag"
+          style="background:rgba(0,217,126,0.1);color:var(--emerald);border:1px solid rgba(0,217,126,0.2)">Generative AI
+          / NLP</span>
+      </div>
+      <div class="feat-card reveal" style="--icon-color: #B89EFF">
+        <div class="feat-icon" style="color:#B89EFF">📚</div>
+        <div class="feat-title">Smart Learning Modules</div>
+        <div class="feat-desc">Embedded financial literacy content, interactive quizzes, and constructive feedback loops
+          help novice investors build real knowledge.</div>
+        <span class="feat-tag"
+          style="background:rgba(184,158,255,0.1);color:#B89EFF;border:1px solid rgba(184,158,255,0.2)">Educational
+          AI</span>
+      </div>
+      <div class="feat-card reveal" style="--icon-color: #FF9B50">
+        <div class="feat-icon" style="color:#FF9B50">📊</div>
+        <div class="feat-title">Rich Data Visualisations</div>
+        <div class="feat-desc">Interactive charts, prediction graphs, and portfolio dashboards built with a responsive
+          frontend for seamless data comprehension.</div>
+        <span class="feat-tag"
+          style="background:rgba(255,155,80,0.1);color:#FF9B50;border:1px solid rgba(255,155,80,0.2)">HTML / CSS /
+          JS</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- DEMO -->
+  <section id="demo">
+    <div class="demo-wrap">
+      <div class="reveal">
+        <div class="section-tag">Live Preview</div>
+        <div class="section-title">Talk to Your Investment AI</div>
+        <p class="section-sub">The chatbot answers your market questions in real time, explains its reasoning, and helps
+          you learn from every interaction.</p>
+        <br>
+        <div class="chart-container">
+          <div class="chart-header">
+            <div>
+              <div class="chart-stock">RELIANCE.NS</div>
+              <div class="chart-change">▲ +2.4% today</div>
+            </div>
+            <div class="chart-price">₹2,847</div>
+          </div>
+          <div class="chart-tabs">
+            <button class="chart-tab active">1D</button>
+            <button class="chart-tab">1W</button>
+            <button class="chart-tab">1M</button>
+            <button class="chart-tab">3M</button>
+          </div>
+          <svg class="chart-svg" viewBox="0 0 600 180" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#00D97E" stop-opacity="0.3" />
+                <stop offset="100%" stop-color="#00D97E" stop-opacity="0" />
+              </linearGradient>
+            </defs>
+            <path
+              d="M0,140 L40,120 L80,130 L120,100 L160,110 L200,80 L240,90 L280,60 L320,70 L360,45 L400,55 L440,35 L480,50 L520,30 L560,40 L600,25 L600,180 L0,180 Z"
+              fill="url(#chartGrad)" />
+            <path
+              d="M0,140 L40,120 L80,130 L120,100 L160,110 L200,80 L240,90 L280,60 L320,70 L360,45 L400,55 L440,35 L480,50 L520,30 L560,40 L600,25"
+              fill="none" stroke="#00D97E" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+            <!-- Prediction dotted line -->
+            <path d="M520,30 L560,20 L600,10" fill="none" stroke="var(--gold)" stroke-width="2" stroke-dasharray="6,4"
+              stroke-linecap="round" />
+          </svg>
+          <div
+            style="display:flex;justify-content:space-between;font-size:0.72rem;color:var(--muted);margin-top:0.5rem;">
+            <span>9:00</span><span>12:00</span><span>15:00</span><span style="color:var(--gold)">PRED→</span>
+          </div>
+          <div class="risk-meter">
+            <div class="risk-label"><span>Risk Level</span><span style="color:var(--gold)">Moderate — 62/100</span>
+            </div>
+            <div class="risk-bar-bg">
+              <div class="risk-bar-fill"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chat Window -->
+      <div class="reveal">
+        <div class="chat-window">
+          <div class="chat-topbar">
+            <div class="chat-dots"><span></span><span></span><span></span></div>
+            <span class="chat-title">InvestIQ Assistant</span>
+            <div class="chat-status"><span></span>Online</div>
+          </div>
+          <div class="chat-body">
+            <div class="msg msg-bot" style="animation-delay:0.1s">
+              <div class="msg-label">InvestIQ AI</div>
+              👋 Hello! I'm your AI investment assistant. Ask me about any stock, risk analysis, or get started with
+              learning basics.
+            </div>
+            <div class="msg msg-user" style="animation-delay:0.4s">What's the risk level for TCS right now?</div>
+            <div class="msg msg-bot" style="animation-delay:0.7s">
+              <div class="msg-label">InvestIQ AI</div>
+              📊 TCS currently shows <strong style="color:var(--gold)">moderate risk (58/100)</strong>. Volatility is
+              1.8% (30-day), Sharpe Ratio: 1.42. My SHAP analysis shows P/E ratio and revenue growth are the key
+              positive drivers. Want a full breakdown?
+            </div>
+            <div class="msg msg-user" style="animation-delay:1s">Yes! And should I buy?</div>
+            <div class="msg msg-bot" style="animation-delay:1.3s">
+              <div class="msg-label">InvestIQ AI</div>
+              🔮 LSTM prediction suggests a <strong style="color:var(--emerald)">+3.2% uptrend</strong> over 7 days with
+              78% confidence. Based on your risk profile, this aligns with a <em>moderate growth</em> strategy.
+              Remember: this is probabilistic, not guaranteed!
+            </div>
+          </div>
+          <div class="chat-input-bar">
+            <input class="chat-input" placeholder="Ask about any stock or concept…" readonly>
+            <button class="chat-send">→</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section id="how">
+    <div style="text-align:center" class="reveal">
+      <div class="section-tag">Workflow</div>
+      <div class="section-title" style="margin:0 auto">How InvestIQ Works</div>
+      <p class="section-sub" style="margin:0.8rem auto 0">From raw data to actionable insight in milliseconds.</p>
+    </div>
+    <div class="steps">
+      <div class="step reveal">
+        <div class="step-num">1</div>
+        <div class="step-title">Input Query</div>
+        <div class="step-desc">Type your question or stock symbol into the conversational interface.</div>
+      </div>
+      <div class="step reveal">
+        <div class="step-num">2</div>
+        <div class="step-title">Data Fetch</div>
+        <div class="step-desc">Real-time & historical data pulled via yFinance / Alpha Vantage APIs.</div>
+      </div>
+      <div class="step reveal">
+        <div class="step-num">3</div>
+        <div class="step-title">LSTM Prediction</div>
+        <div class="step-desc">Deep learning model forecasts trend with confidence intervals and risk metrics.</div>
+      </div>
+      <div class="step reveal">
+        <div class="step-num">4</div>
+        <div class="step-title">XAI Explanation</div>
+        <div class="step-desc">SHAP / LIME identify the key features driving the prediction for full transparency.</div>
+      </div>
+      <div class="step reveal">
+        <div class="step-num">5</div>
+        <div class="step-title">Smart Response</div>
+        <div class="step-desc">Generative AI crafts a clear, educational reply with charts and actionable insights.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TECH STACK -->
+  <section id="tech">
+    <div class="tech-center reveal">
+      <div class="section-tag">Technology Stack</div>
+      <div class="section-title" style="margin:0 auto">Built on Cutting-Edge Tools</div>
+      <p class="section-sub" style="margin:0.8rem auto 0">Production-grade libraries powering every prediction and
+        explanation.</p>
+    </div>
+    <div class="tech-badges reveal">
+      <div class="tech-badge"><span class="dot" style="background:#FF6F00"></span>TensorFlow / Keras</div>
+      <div class="tech-badge"><span class="dot" style="background:#F5C842"></span>LSTM Networks</div>
+      <div class="tech-badge"><span class="dot" style="background:#00D97E"></span>SHAP (XAI)</div>
+      <div class="tech-badge"><span class="dot" style="background:#38BFFF"></span>LIME (XAI)</div>
+      <div class="tech-badge"><span class="dot" style="background:#FF6B6B"></span>Flask / FastAPI</div>
+      <div class="tech-badge"><span class="dot" style="background:#B89EFF"></span>Scikit-learn</div>
+      <div class="tech-badge"><span class="dot" style="background:#FF9B50"></span>yFinance API</div>
+      <div class="tech-badge"><span class="dot" style="background:#00D97E"></span>Generative AI / NLP</div>
+      <div class="tech-badge"><span class="dot" style="background:#38BFFF"></span>HTML · CSS · JavaScript</div>
+      <div class="tech-badge"><span class="dot" style="background:#F5C842"></span>Python</div>
+    </div>
+  </section>
+
+  <!-- TEAM -->
+  <section id="team">
+    <div style="text-align:center" class="reveal">
+      <div class="section-tag">Our Team</div>
+      <div class="section-title" style="margin:0 auto">The Minds Behind InvestIQ</div>
+      <p class="section-sub" style="margin:0.8rem auto 0">B.Tech VII Semester, Computer Science & Engineering, Medicaps
+        University, Indore</p>
+    </div>
+    <div class="team-grid">
+      <div class="team-card reveal">
+        <div class="team-avatar">NB</div>
+        <div class="team-name">Neha Bankar</div>
+        <div class="team-id">EN23CS301666</div>
+        <span class="team-role">Developer</span>
+      </div>
+      <div class="team-card reveal">
+        <div class="team-avatar">NM</div>
+        <div class="team-name">Nikita Maity</div>
+        <div class="team-id">EN23CS301675</div>
+        <span class="team-role">Developer</span>
+      </div>
+      <div class="team-card reveal">
+        <div class="team-avatar">SV</div>
+        <div class="team-name">Prof. Sandeep Veerwani</div>
+        <div class="team-id">Faculty Mentor</div>
+        <span class="team-role team-guide">Project Guide</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <div class="cta-section">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="cta-title reveal">Ready to Invest <span>Smarter?</span></div>
+    <p class="cta-sub reveal">Experience AI-driven market intelligence, explainable predictions, and guided learning —
+      all in one place.</p>
+    <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap" class="reveal">
+      <a href="chatbot.html" style="text-decoration:none"><button class="btn-primary">💬 Launch AI Chatbot</button></a>
+      <button class="btn-ghost" onclick="openSynopsis()">📖 View Synopsis</button>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="logo">InvestIQ ⚡</div>
+    <div>B.Tech Minor Project — Department of CSE, Medicaps University, Indore — February 2026</div>
+    <div>Built using LSTM + XAI</div>
+  </footer>
+
+  <!-- SYNOPSIS MODAL -->
+  <div class="synopsis-overlay" id="synopsisOverlay" onclick="handleOverlayClick(event)">
+    <div class="synopsis-modal" role="dialog" aria-modal="true" aria-labelledby="synTitle">
+
+      <!-- Header -->
+      <div class="synopsis-header">
+        <div class="synopsis-header-left">
+          <div class="synopsis-header-icon">📄</div>
+          <div class="synopsis-header-text">
+            <div class="stag">Project Synopsis — B.Tech VII Sem</div>
+            <h2 id="synTitle">AI-Powered Investment Assistant</h2>
+          </div>
+        </div>
+        <button class="synopsis-close" onclick="closeSynopsis()" aria-label="Close synopsis">✕</button>
+      </div>
+
+      <!-- Tabs -->
+      <div class="synopsis-tabs">
+        <button class="syn-tab active" onclick="switchTab('cover', this)">Overview</button>
+        <button class="syn-tab" onclick="switchTab('intro', this)">Introduction</button>
+        <button class="syn-tab" onclick="switchTab('litreview', this)">Literature</button>
+        <button class="syn-tab" onclick="switchTab('objectives', this)">Objectives</button>
+        <button class="syn-tab" onclick="switchTab('methodology', this)">Methodology</button>
+        <button class="syn-tab" onclick="switchTab('references', this)">References</button>
+      </div>
+
+      <!-- Body -->
+      <div class="synopsis-body">
+
+        <!-- COVER PANEL -->
+        <div class="syn-panel active" id="syn-cover">
+          <div class="syn-cover">
+            <div class="syn-cover-uni">🎓 Medicaps University, Indore — February 2026</div>
+            <div class="syn-cover-title">AI-Powered Investment Assistant<br>for Market Prediction, Risk Analysis<br>&amp; Smart Learning</div>
+            <div class="syn-cover-sub">A Minor Project Synopsis · B.Tech (VII Semester) · Computer Science &amp; Engineering</div>
+            <div class="syn-author-row">
+              <div class="syn-author-chip">Neha Bankar <span>EN23CS301666</span></div>
+              <div class="syn-author-chip">Nikita Maity <span>EN23CS301675</span></div>
+            </div>
+            <div class="syn-guide-chip">Under the guidance of Prof. Sandeep Veerwani</div>
+          </div>
+
+          <div class="syn-section">
+            <div class="syn-section-title">📌 Problem at a Glance</div>
+            <p class="syn-text">
+              Many retail investors enter the stock market without adequate knowledge or analytical tools. 
+              Existing platforms deliver automated recommendations but lack <strong>transparency</strong>, 
+              <strong>educational guidance</strong>, and <strong>personalized feedback</strong>, leading to 
+              uninformed decisions and limited learning for novice investors.
+            </p>
+          </div>
+
+          <div class="syn-section">
+            <div class="syn-section-title">🚀 Our Solution</div>
+            <p class="syn-text">
+              An integrated, user-centric system combining <strong>AI-driven market prediction</strong> (LSTM), 
+              <strong>personalized risk analysis</strong>, <strong>explainable AI</strong> (SHAP / LIME), and 
+              <strong>interactive educational resources</strong> delivered through a conversational chatbot interface. 
+              Every recommendation is transparent, reasoned, and educational.
+            </p>
+          </div>
+
+          <div class="syn-section">
+            <div class="syn-section-title">🛠️ Core Technology</div>
+            <div class="syn-method-grid">
+              <div class="syn-method-card" style="--m-color: var(--gold)">
+                <div class="syn-method-label">Prediction</div>
+                <div class="syn-method-name">LSTM Networks</div>
+                <div class="syn-method-desc">TensorFlow/Keras deep learning for time-series stock forecasting</div>
+              </div>
+              <div class="syn-method-card" style="--m-color: var(--emerald)">
+                <div class="syn-method-label">Explainability</div>
+                <div class="syn-method-name">SHAP &amp; LIME</div>
+                <div class="syn-method-desc">Feature importance explanations for transparent AI decisions</div>
+              </div>
+              <div class="syn-method-card" style="--m-color: var(--sky)">
+                <div class="syn-method-label">Conversation</div>
+                <div class="syn-method-name">Generative AI / NLP</div>
+                <div class="syn-method-desc">Natural language understanding &amp; educational response generation</div>
+              </div>
+              <div class="syn-method-card" style="--m-color: var(--coral)">
+                <div class="syn-method-label">Risk Metrics</div>
+                <div class="syn-method-name">Volatility &amp; Sharpe</div>
+                <div class="syn-method-desc">Probabilistic confidence intervals and quantitative risk scoring</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- INTRODUCTION PANEL -->
+        <div class="syn-panel" id="syn-intro">
+          <div class="syn-section">
+            <div class="syn-section-title">📖 Introduction</div>
+            <p class="syn-text">
+              The stock market represents a dynamic and volatile environment where individual investors, 
+              particularly beginners, often participate without adequate knowledge or analytical tools. 
+              Market data is inherently complex, influenced by numerous factors such as economic indicators, 
+              global events, and investor sentiment, making accurate prediction and risk assessment 
+              challenging.
+            </p>
+            <br>
+            <p class="syn-text">
+              Many existing investment platforms deliver automated recommendations but <strong>lack 
+              transparency</strong> in their decision-making processes and fail to provide educational 
+              guidance or constructive feedback to users. This results in poor risk evaluation, uninformed 
+              decisions, and limited learning opportunities for novice investors.
+            </p>
+            <br>
+            <p class="syn-text">
+              There is a clear need for an integrated, user-centric system that combines 
+              <strong>artificial intelligence-driven market prediction</strong>, personalized risk analysis, 
+              explainable recommendations, and interactive educational resources. The proposed AI-powered 
+              investment assistant addresses these gaps by functioning as an interactive chatbot that 
+              empowers users with informed, transparent, and educational investment support.
+            </p>
+          </div>
+
+          <div class="syn-section">
+            <div class="syn-section-title">⚠️ Problem Definition</div>
+            <ul class="syn-obj-list">
+              <li>Many retail investors enter the stock market lacking sufficient domain knowledge, leading to suboptimal decisions amid volatile and multifaceted data.</li>
+              <li>Current platforms frequently provide opaque recommendations without risk explanations, educational content, or personalized feedback.</li>
+              <li>Beginners particularly struggle with interpreting trends, assessing investment risks, and learning from outcomes.</li>
+              <li>No unified, interactive system currently exists that simultaneously offers market trend prediction, comprehensive risk analysis, personalized guidance, transparent explainable AI, educational resources, and constructive feedback through a conversational interface.</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- LITERATURE PANEL -->
+        <div class="syn-panel" id="syn-litreview">
+          <div class="syn-section">
+            <div class="syn-section-title">📚 Literature Review</div>
+            <p class="syn-text">
+              The application of deep learning and explainable artificial intelligence (XAI) in stock market 
+              prediction has attracted significant research attention due to its ability to model complex, 
+              nonlinear, and highly volatile financial time-series data. Traditional statistical models such 
+              as ARIMA have limitations in capturing nonlinear dependencies, whereas deep learning models, 
+              particularly <strong>RNN and LSTM networks</strong>, have demonstrated superior performance 
+              in sequential data modeling.
+            </p>
+          </div>
+
+          <div class="syn-section">
+            <div class="syn-section-title">🔬 Key Findings</div>
+            <div class="syn-method-grid">
+              <div class="syn-method-card" style="--m-color: var(--gold)">
+                <div class="syn-method-label">Fischer &amp; Krauss (2018)</div>
+                <div class="syn-method-name">LSTM for Financial Prediction</div>
+                <div class="syn-method-desc">LSTM networks outperform traditional ML models in predicting stock price movements, effectively capturing temporal dependencies.</div>
+              </div>
+              <div class="syn-method-card" style="--m-color: var(--emerald)">
+                <div class="syn-method-label">Nelson et al. (2017)</div>
+                <div class="syn-method-name">LSTM Stock Price Accuracy</div>
+                <div class="syn-method-desc">LSTM achieves higher accuracy than conventional models by retaining long-term memory and detecting time-series patterns.</div>
+              </div>
+              <div class="syn-method-card" style="--m-color: var(--sky)">
+                <div class="syn-method-label">Lundberg &amp; Lee (2017)</div>
+                <div class="syn-method-name">SHAP — Unified XAI</div>
+                <div class="syn-method-desc">Game-theory-based framework for interpreting ML predictions, enabling both global and local model interpretability.</div>
+              </div>
+              <div class="syn-method-card" style="--m-color: var(--coral)">
+                <div class="syn-method-label">Ribeiro et al. (2016)</div>
+                <div class="syn-method-name">LIME — Local Explanations</div>
+                <div class="syn-method-desc">Explains individual predictions by approximating the model locally with an interpretable surrogate model.</div>
+              </div>
+              <div class="syn-method-card" style="--m-color: #B89EFF">
+                <div class="syn-method-label">Zhang et al. (2020)</div>
+                <div class="syn-method-name">LSTM + XAI Hybrid</div>
+                <div class="syn-method-desc">Integrating LSTM with feature importance techniques improves both predictive performance and interpretability.</div>
+              </div>
+              <div class="syn-method-card" style="--m-color: #FF9B50">
+                <div class="syn-method-label">Sezer et al. (2020)</div>
+                <div class="syn-method-name">Deep Learning Survey</div>
+                <div class="syn-method-desc">LSTM, GRU, and CNN are highly effective for financial prediction; explainability and user trust are critical for real-world deployment.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="syn-section">
+            <div class="syn-section-title">💡 Conclusion from Literature</div>
+            <p class="syn-text">
+              LSTM networks are highly effective for stock market prediction due to their ability to capture 
+              temporal dependencies and nonlinear patterns. Integration of XAI techniques such as SHAP and 
+              LIME enhances model transparency, while web-based deployment frameworks such as Flask improve 
+              accessibility. The proposed system extends existing approaches by integrating deep learning 
+              prediction, explainability, and conversational assistance for a transparent, user-centric 
+              investment decision support tool.
+            </p>
+          </div>
+        </div>
+
+        <!-- OBJECTIVES PANEL -->
+        <div class="syn-panel" id="syn-objectives">
+          <div class="syn-section">
+            <div class="syn-section-title">🎯 Project Objectives</div>
+            <ul class="syn-obj-list">
+              <li>Design and develop an interactive AI chatbot that provides real-time investment guidance and conversational support to users.</li>
+              <li>Implement machine learning models for accurate stock market trend prediction and quantitative risk analysis.</li>
+              <li>Generate personalized investment recommendations based on user profiles, risk tolerance, and market conditions.</li>
+              <li>Incorporate explainable AI techniques ensuring transparency in predictions, risk assessments, and recommendations.</li>
+              <li>Integrate educational modules, learning resources, and constructive feedback mechanisms to enhance user financial literacy.</li>
+              <li>Create a responsive frontend with visualizations for clear representation of trends, risks, and insights.</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- METHODOLOGY PANEL -->
+        <div class="syn-panel" id="syn-methodology">
+          <div class="syn-section">
+            <div class="syn-section-title">⚙️ System Architecture</div>
+            <p class="syn-text" style="margin-bottom:1.2rem">The proposed system adopts a modular architecture combining best-in-class tools across frontend, backend, ML, and AI layers:</p>
+            <div class="syn-method-grid">
+              <div class="syn-method-card" style="--m-color: var(--sky)">
+                <div class="syn-method-label">Frontend</div>
+                <div class="syn-method-name">HTML · CSS · JavaScript</div>
+                <div class="syn-method-desc">Responsive, interactive interface for chatbot queries and data visualizations (graphs, charts).</div>
+              </div>
+              <div class="syn-method-card" style="--m-color: var(--coral)">
+                <div class="syn-method-label">Backend</div>
+                <div class="syn-method-name">Flask / FastAPI (Python)</div>
+                <div class="syn-method-desc">Manages API requests, integrates ML models, processes data, and handles user sessions.</div>
+              </div>
+              <div class="syn-method-card" style="--m-color: var(--gold)">
+                <div class="syn-method-label">ML &amp; Prediction</div>
+                <div class="syn-method-name">LSTM via TensorFlow/Keras</div>
+                <div class="syn-method-desc">Forecasts stock trends with confidence intervals; risk metrics include volatility, Sharpe ratio, and probabilistic confidence intervals.</div>
+              </div>
+              <div class="syn-method-card" style="--m-color: var(--emerald)">
+                <div class="syn-method-label">NLP &amp; Chatbot</div>
+                <div class="syn-method-name">Generative AI</div>
+                <div class="syn-method-desc">Natural language understanding, conversational responses, explainable feedback, and educational explanations.</div>
+              </div>
+              <div class="syn-method-card" style="--m-color: #B89EFF">
+                <div class="syn-method-label">Data Sources</div>
+                <div class="syn-method-name">yFinance / Alpha Vantage</div>
+                <div class="syn-method-desc">Real-time and historical stock data fetched via reliable financial APIs.</div>
+              </div>
+              <div class="syn-method-card" style="--m-color: #FF9B50">
+                <div class="syn-method-label">Explainable AI</div>
+                <div class="syn-method-name">SHAP &amp; LIME</div>
+                <div class="syn-method-desc">Generates feature importance explanations for LSTM outputs — which historical factors most influence predicted price/risk.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="syn-section">
+            <div class="syn-section-title">🔄 User Query Workflow</div>
+            <ul class="syn-obj-list">
+              <li><strong>Input:</strong> User types a query or stock symbol into the conversational interface.</li>
+              <li><strong>Backend Processing:</strong> Flask/FastAPI routes the request, fetches real-time data via API.</li>
+              <li><strong>LSTM Prediction / Risk Analysis:</strong> Deep learning model generates forecasts and risk scores.</li>
+              <li><strong>XAI Explanation:</strong> SHAP/LIME identifies key features driving the prediction for full transparency.</li>
+              <li><strong>Generative Response:</strong> AI crafts a clear, educational reply with rationale and visualization.</li>
+              <li><strong>Feedback Loop:</strong> User ratings and interactions feed back into the learning module.</li>
+            </ul>
+          </div>
+
+          <div class="syn-section">
+            <div class="syn-section-title">📅 Development Phases</div>
+            <ul class="syn-obj-list">
+              <li>Data collection and preprocessing (yFinance, Alpha Vantage APIs)</li>
+              <li>Model training and evaluation with hyperparameter tuning</li>
+              <li>XAI integration (SHAP / LIME explanation pipeline)</li>
+              <li>Chatbot deployment and NLP response generation</li>
+              <li>UI development and visualization layer</li>
+              <li>Usability testing and feedback refinement</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- REFERENCES PANEL -->
+        <div class="syn-panel" id="syn-references">
+          <div class="syn-section">
+            <div class="syn-section-title">📑 Academic References</div>
+            <div class="syn-ref-list">
+              <div class="syn-ref-item">
+                <div class="syn-ref-num">1</div>
+                <div class="syn-ref-content">
+                  <div class="syn-ref-authors">Fischer &amp; Krauss (2018)</div>
+                  <div class="syn-ref-title">Deep learning with long short-term memory networks for financial market predictions</div>
+                  <div class="syn-ref-venue">European Journal of Operational Research, 270(2), 654–669</div>
+                  <a class="syn-ref-link" href="https://doi.org/10.1016/j.ejor.2017.11.054" target="_blank" rel="noopener">↗ doi.org/10.1016/j.ejor.2017.11.054</a>
+                </div>
+              </div>
+              <div class="syn-ref-item">
+                <div class="syn-ref-num">2</div>
+                <div class="syn-ref-content">
+                  <div class="syn-ref-authors">Nelson, Pereira &amp; de Oliveira (2017)</div>
+                  <div class="syn-ref-title">Stock market's price movement prediction with LSTM neural networks</div>
+                  <div class="syn-ref-venue">International Joint Conference on Neural Networks (IJCNN)</div>
+                  <a class="syn-ref-link" href="https://doi.org/10.1109/IJCNN.2017.7966019" target="_blank" rel="noopener">↗ doi.org/10.1109/IJCNN.2017.7966019</a>
+                </div>
+              </div>
+              <div class="syn-ref-item">
+                <div class="syn-ref-num">3</div>
+                <div class="syn-ref-content">
+                  <div class="syn-ref-authors">Lundberg &amp; Lee (2017)</div>
+                  <div class="syn-ref-title">A Unified Approach to Interpreting Model Predictions (SHAP)</div>
+                  <div class="syn-ref-venue">Advances in Neural Information Processing Systems (NeurIPS)</div>
+                  <a class="syn-ref-link" href="https://papers.nips.cc/paper/7062-a-unified-approach-to-interpreting-model-predictions" target="_blank" rel="noopener">↗ NeurIPS Paper</a>
+                </div>
+              </div>
+              <div class="syn-ref-item">
+                <div class="syn-ref-num">4</div>
+                <div class="syn-ref-content">
+                  <div class="syn-ref-authors">Ribeiro, Singh &amp; Guestrin (2016)</div>
+                  <div class="syn-ref-title">"Why Should I Trust You?": Explaining the Predictions of Any Classifier (LIME)</div>
+                  <div class="syn-ref-venue">ACM SIGKDD Conference on Knowledge Discovery and Data Mining</div>
+                  <a class="syn-ref-link" href="https://doi.org/10.1145/2939672.2939778" target="_blank" rel="noopener">↗ doi.org/10.1145/2939672.2939778</a>
+                </div>
+              </div>
+              <div class="syn-ref-item">
+                <div class="syn-ref-num">5</div>
+                <div class="syn-ref-content">
+                  <div class="syn-ref-authors">Zhang et al. (2020)</div>
+                  <div class="syn-ref-title">Explainable financial time series forecasting using deep learning</div>
+                  <div class="syn-ref-venue">IEEE Access, 2020</div>
+                  <a class="syn-ref-link" href="https://doi.org/10.1109/ACCESS.2020.2984885" target="_blank" rel="noopener">↗ doi.org/10.1109/ACCESS.2020.2984885</a>
+                </div>
+              </div>
+              <div class="syn-ref-item">
+                <div class="syn-ref-num">6</div>
+                <div class="syn-ref-content">
+                  <div class="syn-ref-authors">Sezer et al. (2020)</div>
+                  <div class="syn-ref-title">Financial time series forecasting with deep learning: A systematic literature review</div>
+                  <div class="syn-ref-venue">Applied Soft Computing, 2020</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="syn-section" style="margin-top:2rem">
+            <div class="syn-section-title">💻 GitHub Implementations</div>
+            <div class="syn-ref-list">
+              <div class="syn-ref-item">
+                <div class="syn-ref-num" style="background:rgba(0,217,126,0.12);border-color:rgba(0,217,126,0.2);color:var(--emerald)">7</div>
+                <div class="syn-ref-content">
+                  <div class="syn-ref-title">Stock-Price-prediction-and-XAI</div>
+                  <div class="syn-ref-venue">Aish-TheMagician · GitHub</div>
+                  <a class="syn-ref-link" href="https://github.com/Aish-TheMagician/Stock-Price-prediction-and-XAI" target="_blank" rel="noopener">↗ github.com/Aish-TheMagician/Stock-Price-prediction-and-XAI</a>
+                </div>
+              </div>
+              <div class="syn-ref-item">
+                <div class="syn-ref-num" style="background:rgba(0,217,126,0.12);border-color:rgba(0,217,126,0.2);color:var(--emerald)">8</div>
+                <div class="syn-ref-content">
+                  <div class="syn-ref-title">stock-prediction (Flask + LSTM)</div>
+                  <div class="syn-ref-venue">ChellaVigneshKP · GitHub</div>
+                  <a class="syn-ref-link" href="https://github.com/ChellaVigneshKP/stock-prediction" target="_blank" rel="noopener">↗ github.com/ChellaVigneshKP/stock-prediction</a>
+                </div>
+              </div>
+              <div class="syn-ref-item">
+                <div class="syn-ref-num" style="background:rgba(0,217,126,0.12);border-color:rgba(0,217,126,0.2);color:var(--emerald)">9</div>
+                <div class="syn-ref-content">
+                  <div class="syn-ref-title">Stock-Market-Prediction</div>
+                  <div class="syn-ref-venue">Razalkr70 · GitHub</div>
+                  <a class="syn-ref-link" href="https://github.com/Razalkr70/Stock-Market-Prediction" target="_blank" rel="noopener">↗ github.com/Razalkr70/Stock-Market-Prediction</a>
+                </div>
+              </div>
+              <div class="syn-ref-item">
+                <div class="syn-ref-num" style="background:rgba(0,217,126,0.12);border-color:rgba(0,217,126,0.2);color:var(--emerald)">10</div>
+                <div class="syn-ref-content">
+                  <div class="syn-ref-title">Stock-Price-Prediction-Using-LSTM</div>
+                  <div class="syn-ref-venue">034adarsh · GitHub</div>
+                  <a class="syn-ref-link" href="https://github.com/034adarsh/Stock-Price-Prediction-Using-LSTM" target="_blank" rel="noopener">↗ github.com/034adarsh/Stock-Price-Prediction-Using-LSTM</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /synopsis-body -->
+
+      <!-- Footer -->
+      <div class="synopsis-footer">
+        <div class="synopsis-footer-info">
+          <strong>InvestIQ</strong> · Minor Project · Dept. of CSE · Medicaps University, Indore · Feb 2026
+        </div>
+        <button class="syn-dl-btn" onclick="closeSynopsis()">✕ Close</button>
+      </div>
+
+    </div><!-- /synopsis-modal -->
+  </div><!-- /synopsis-overlay -->
+
+  <!-- ═══════════════════════════════════════ EMAIL BANNER ═══════════════════════════════════════ -->
+  <div class="email-banner" id="emailBanner">
+    <div class="email-banner-text">
+      <strong>📬 Get Free Financial Insights</strong>
+      <p>Join 2,000+ smart investors — get weekly market tips & AI-powered alerts in your inbox.</p>
+    </div>
+    <div class="email-banner-form" id="bannerFormContainer">
+      <input class="email-banner-input" id="bannerEmail" type="email" placeholder="Enter your email…" autocomplete="email">
+      <button class="email-banner-submit" onclick="submitBannerEmail()">Subscribe Free →</button>
+      <div class="email-banner-consent" style="margin-top:0.3rem">
+        <input type="checkbox" id="bannerConsent">
+        <label for="bannerConsent">I consent to receiving emails from InvestIQ. I can unsubscribe anytime. View <a href="#" onclick="return false;" style="color:var(--sky)">Privacy Policy</a>.</label>
+      </div>
+      <div class="email-banner-success" id="bannerSuccess">✅ Subscribed! Check your inbox soon.</div>
+    </div>
+    <button class="email-banner-close" onclick="dismissBanner()" title="Dismiss">✕</button>
+  </div>
+
+  <script>
+    // ═══════════════════════════════════════════════════════
+    //  AUTH STATE MANAGEMENT
+    // ═══════════════════════════════════════════════════════
+    const API = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost'
+      ? `${window.location.protocol}//${window.location.host}`
+      : '';
+
+    function _getToken()  { return localStorage.getItem('iq_token'); }
+    function _getUser()   { try { return JSON.parse(localStorage.getItem('iq_user') || 'null'); } catch { return null; } }
+    function _setSession(token, user) {
+      localStorage.setItem('iq_token', token);
+      localStorage.setItem('iq_user', JSON.stringify(user));
+    }
+    function _clearSession() {
+      localStorage.removeItem('iq_token');
+      localStorage.removeItem('iq_user');
+    }
+
+    // Update nav to reflect auth state
+    function syncNavAuth() {
+      const user = _getUser();
+      const guest = document.getElementById('navGuest');
+      const chip  = document.getElementById('navUser');
+      const name  = document.getElementById('navName');
+      const avatar = document.getElementById('navAvatar');
+      const logout = document.getElementById('navLogout');
+      if (user) {
+        guest.style.display  = 'none';
+        chip.classList.add('visible');
+        logout.style.display = 'block';
+        name.textContent = user.name.split(' ')[0];
+        avatar.textContent = user.name.charAt(0).toUpperCase();
+      } else {
+        guest.style.display  = 'flex';
+        chip.classList.remove('visible');
+        logout.style.display = 'none';
+      }
+    }
+
+    function authLogout() {
+      _clearSession();
+      syncNavAuth();
+      showBannerIfNeeded();
+    }
+
+    // ── Auth Modal ───────────────────────────────────────────
+    function openAuth(tab) {
+      document.getElementById('authOverlay').classList.add('open');
+      document.body.style.overflow = 'hidden';
+      switchAuthTab(tab || 'login');
+    }
+    function closeAuth() {
+      document.getElementById('authOverlay').classList.remove('open');
+      document.body.style.overflow = '';
+    }
+    function _overlayClose(e, id) {
+      if (e.target === document.getElementById(id)) {
+        if (id === 'authOverlay') closeAuth();
+      }
+    }
+    function switchAuthTab(tab) {
+      ['login','signup'].forEach(t => {
+        document.getElementById('tab'+t.charAt(0).toUpperCase()+t.slice(1)).classList.toggle('active', t===tab);
+        document.getElementById('form'+t.charAt(0).toUpperCase()+t.slice(1)).classList.toggle('active', t===tab);
+      });
+    }
+    function _setAuthError(id, msg) {
+      const el = document.getElementById(id);
+      el.textContent = msg; el.classList.toggle('visible', !!msg);
+    }
+    function _onAuthSuccess(data) {
+      _setSession(data.token, data.user);
+      syncNavAuth();
+      closeAuth();
+      showBannerIfNeeded();
+    }
+
+    async function submitLogin(e) {
+      e.preventDefault();
+      const btn = document.getElementById('loginBtn');
+      btn.disabled = true; btn.textContent = 'Logging in…';
+      _setAuthError('loginError', '');
+      try {
+        const res = await fetch(`${API}/api/auth/login`, {
+          method: 'POST', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({
+            email:    document.getElementById('loginEmail').value.trim(),
+            password: document.getElementById('loginPassword').value,
+          })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Login failed');
+        _onAuthSuccess(data);
+      } catch (err) {
+        _setAuthError('loginError', err.message);
+      } finally {
+        btn.disabled = false; btn.textContent = 'Log In →';
+      }
+    }
+
+    async function submitSignup(e) {
+      e.preventDefault();
+      const btn = document.getElementById('signupBtn');
+      btn.disabled = true; btn.textContent = 'Creating account…';
+      _setAuthError('signupError', '');
+      try {
+        const res = await fetch(`${API}/api/auth/register`, {
+          method: 'POST', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({
+            name:     document.getElementById('signupName').value.trim(),
+            email:    document.getElementById('signupEmail').value.trim(),
+            password: document.getElementById('signupPassword').value,
+          })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Registration failed');
+        _onAuthSuccess(data);
+      } catch (err) {
+        _setAuthError('signupError', err.message);
+      } finally {
+        btn.disabled = false; btn.textContent = 'Create Account →';
+      }
+    }
+
+    // ── Guest Email Banner ───────────────────────────────────
+    function showBannerIfNeeded() {
+      const collected = localStorage.getItem('iq_email_collected') === 'true';
+      const loggedIn  = !!_getUser();
+      const banner    = document.getElementById('emailBanner');
+      if (!collected && !loggedIn) {
+        setTimeout(() => banner.classList.add('visible'), 3000);
+      } else {
+        banner.classList.remove('visible');
+        // If logged in, silently record their email
+        if (loggedIn && !collected) _autoCollectEmail();
+      }
+    }
+    function dismissBanner() {
+      document.getElementById('emailBanner').classList.remove('visible');
+      localStorage.setItem('iq_email_collected', 'dismissed');
+    }
+    async function submitBannerEmail() {
+      const email   = document.getElementById('bannerEmail').value.trim();
+      const consent = document.getElementById('bannerConsent').checked;
+      if (!email) { alert('Please enter your email address.'); return; }
+      if (!consent) { alert('Please check the consent checkbox to continue.'); return; }
+      try {
+        const token = _getToken();
+        const res = await fetch(`${API}/api/collect-email`, {
+          method: 'POST',
+          headers: Object.assign({'Content-Type':'application/json'}, token ? {'Authorization':'Bearer '+token} : {}),
+          body: JSON.stringify({ email, consent: true })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error);
+        localStorage.setItem('iq_email_collected', 'true');
+        document.getElementById('bannerFormContainer').style.display = 'none';
+        document.getElementById('bannerSuccess').classList.add('visible');
+        setTimeout(() => document.getElementById('emailBanner').classList.remove('visible'), 3000);
+      } catch (err) { alert('Error: ' + err.message); }
+    }
+    async function _autoCollectEmail() {
+      const user  = _getUser();
+      const token = _getToken();
+      if (!user) return;
+      try {
+        await fetch(`${API}/api/collect-email`, {
+          method: 'POST',
+          headers: {'Content-Type':'application/json','Authorization':'Bearer '+token},
+          body: JSON.stringify({ email: user.email, consent: true, name: user.name })
+        });
+        localStorage.setItem('iq_email_collected', 'true');
+      } catch {}
+    }
+
+    // Initialise on load
+    document.addEventListener('DOMContentLoaded', () => {
+      syncNavAuth();
+      showBannerIfNeeded();
+    });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAuth(); });
+  </script>
+    // Ticker
+    const stocks = [
+      { name: 'NIFTY 50', price: '22,417', change: '+0.84%', up: true },
+      { name: 'SENSEX', price: '73,961', change: '+0.76%', up: true },
+      { name: 'TCS', price: '₹3,912', change: '+1.2%', up: true },
+      { name: 'RELIANCE', price: '₹2,847', change: '+2.4%', up: true },
+      { name: 'INFOSYS', price: '₹1,543', change: '-0.5%', up: false },
+      { name: 'HDFC BANK', price: '₹1,721', change: '+0.9%', up: true },
+      { name: 'ITC', price: '₹479', change: '-0.3%', up: false },
+      { name: 'WIPRO', price: '₹567', change: '+1.8%', up: true },
+      { name: 'BAJAJ FIN', price: '₹7,245', change: '+0.6%', up: true },
+      { name: 'MARUTI', price: '₹12,100', change: '-0.2%', up: false },
+    ];
+
+    const ticker = document.getElementById('ticker');
+    const doubled = [...stocks, ...stocks];
+    ticker.innerHTML = doubled.map(s => `
+    <div class="tick">
+      <span class="tick-name">${s.name}</span>
+      <span class="tick-price">${s.price}</span>
+      <span class="${s.up ? 'tick-up' : 'tick-down'}">${s.change}</span>
+    </div>
+  `).join('');
+
+    // Chart tab toggle
+    document.querySelectorAll('.chart-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.chart-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+      });
+    });
+
+    // Synopsis modal
+    function openSynopsis() {
+      document.getElementById('synopsisOverlay').classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeSynopsis() {
+      document.getElementById('synopsisOverlay').classList.remove('open');
+      document.body.style.overflow = '';
+    }
+    function handleOverlayClick(e) {
+      if (e.target === document.getElementById('synopsisOverlay')) closeSynopsis();
+    }
+    function switchTab(panel, btn) {
+      document.querySelectorAll('.syn-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.syn-panel').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('syn-' + panel).classList.add('active');
+    }
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSynopsis(); });
+
+    // Scroll reveal
+    const reveals = document.querySelectorAll('.reveal');
+    const obs = new IntersectionObserver(entries => {
+      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); } });
+    }, { threshold: 0.12 });
+    reveals.forEach(r => obs.observe(r));
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,31 @@
+
+# ============================================================
+#  InvestIQ — AI Financial Advisory Chatbot
+#  requirements.txt
+# ============================================================
+
+# --- Data & ML Core ---
+numpy>=1.24.0
+pandas>=2.0.0
+scikit-learn>=1.3.0
+xgboost>=2.0.0
+joblib>=1.3.0
+
+# --- Deep Learning ---
+tensorflow>=2.13.0
+
+# --- Financial Data ---
+yfinance>=0.2.36
+kaggle>=1.6.0
+
+# --- Web API ---
+flask>=3.0.0
+flask-cors>=4.0.0
+
+# --- Visualization (for Python scripts) ---
+matplotlib>=3.7.0
+seaborn>=0.12.0
+
+# --- Optional: Jupyter / Notebook support ---
+# jupyter>=1.0.0
+# ipykernel>=6.0.0

@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>InvestIQ AI — Financial Advisory Chatbot</title>
+  <meta name="description" content="InvestIQ AI-powered financial advisor chatbot for stocks, mutual funds, budgeting & risk analysis.">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300&display=swap" rel="stylesheet">
+  <style>
+    :root{--gold:#F5C842;--gold-light:#FFE580;--emerald:#00D97E;--sky:#38BFFF;--coral:#FF6B6B;--bg:#060A12;--bg2:#0C1220;--bg3:#111927;--text:#EEF2FF;--muted:#7A8BA0;--border:rgba(255,255,255,0.07)}
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html{scroll-behavior:smooth}
+    body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;min-height:100vh;display:flex;flex-direction:column}
+    body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(245,200,66,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(245,200,66,0.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
+
+    /* NAV */
+    nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:1rem 5vw;background:rgba(6,10,18,0.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
+    .nav-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:1.4rem;letter-spacing:-0.03em;background:linear-gradient(90deg,var(--gold),var(--emerald));-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-decoration:none}
+    .nav-back{color:var(--muted);text-decoration:none;font-size:0.88rem;display:flex;align-items:center;gap:0.4rem;transition:color 0.2s}
+    .nav-back:hover{color:var(--text)}
+
+    /* LAYOUT */
+    .app-container{display:flex;flex:1;margin-top:60px;height:calc(100vh - 60px);position:relative;z-index:1}
+    .sidebar{width:280px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:1.5rem 1rem;gap:1rem;overflow-y:auto;flex-shrink:0}
+    .sidebar-title{font-family:'Syne',sans-serif;font-weight:700;font-size:0.85rem;color:var(--gold);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:0.3rem}
+    .sidebar-btn{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:0.7rem 1rem;color:var(--text);font-size:0.85rem;cursor:pointer;text-align:left;transition:all 0.2s;font-family:'DM Sans',sans-serif;line-height:1.4}
+    .sidebar-btn:hover{border-color:rgba(245,200,66,0.3);transform:translateX(4px);background:rgba(245,200,66,0.06)}
+    .sidebar-btn .emoji{margin-right:0.4rem}
+    .sidebar-section{margin-top:0.5rem}
+
+    /* RISK BADGE */
+    .risk-badge{display:inline-flex;align-items:center;gap:0.4rem;padding:0.35rem 0.9rem;border-radius:100px;font-size:0.75rem;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;margin-top:0.6rem}
+    .risk-conservative{background:rgba(56,191,255,0.12);color:var(--sky);border:1px solid rgba(56,191,255,0.25)}
+    .risk-moderate{background:rgba(245,200,66,0.12);color:var(--gold);border:1px solid rgba(245,200,66,0.25)}
+    .risk-aggressive{background:rgba(255,107,107,0.12);color:var(--coral);border:1px solid rgba(255,107,107,0.25)}
+
+    /* CHAT AREA */
+    .chat-area{flex:1;display:flex;flex-direction:column;min-width:0}
+    .chat-header{padding:1rem 1.8rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:0.8rem;background:var(--bg2)}
+    .chat-header-icon{width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,var(--gold),var(--emerald));display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0}
+    .chat-header-text h2{font-family:'Syne',sans-serif;font-size:1rem;font-weight:700}
+    .chat-header-text p{color:var(--muted);font-size:0.78rem;margin-top:0.1rem;display:flex;align-items:center;gap:0.4rem}
+    .online-dot{width:6px;height:6px;border-radius:50%;background:var(--emerald);animation:pulse 1.5s infinite}
+    @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.4;transform:scale(0.7)}}
+
+    .chat-messages{flex:1;overflow-y:auto;padding:1.5rem 1.8rem;display:flex;flex-direction:column;gap:1rem}
+    .msg{max-width:75%;padding:0.9rem 1.2rem;border-radius:16px;font-size:0.9rem;line-height:1.6;animation:fadeUp 0.4s ease both}
+    .msg-bot{background:var(--bg3);border:1px solid var(--border);align-self:flex-start;border-radius:4px 16px 16px 16px}
+    .msg-user{background:linear-gradient(135deg,var(--gold),#D4A000);color:var(--bg);align-self:flex-end;border-radius:16px 4px 16px 16px;font-weight:500}
+    .msg-bot .label{font-size:0.68rem;color:var(--emerald);font-weight:700;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:0.3rem}
+    .msg-bot strong{color:var(--gold)}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+
+    .typing-indicator{align-self:flex-start;background:var(--bg3);border:1px solid var(--border);border-radius:4px 16px 16px 16px;padding:0.9rem 1.2rem;display:flex;gap:4px;align-items:center}
+    .typing-indicator span{width:6px;height:6px;background:var(--gold);border-radius:50%;animation:typingDot 1.4s infinite ease-in-out}
+    .typing-indicator span:nth-child(2){animation-delay:0.2s}
+    .typing-indicator span:nth-child(3){animation-delay:0.4s}
+    @keyframes typingDot{0%,80%,100%{transform:scale(0);opacity:0.3}40%{transform:scale(1);opacity:1}}
+
+    /* QUICK REPLIES */
+    .quick-replies{padding:0.5rem 1.8rem;display:flex;flex-wrap:wrap;gap:0.5rem}
+    .qr-btn{background:rgba(245,200,66,0.08);border:1px solid rgba(245,200,66,0.2);border-radius:100px;padding:0.4rem 1rem;color:var(--gold);font-size:0.8rem;font-weight:600;cursor:pointer;transition:all 0.2s;font-family:'DM Sans',sans-serif;white-space:nowrap}
+    .qr-btn:hover{background:rgba(245,200,66,0.15);transform:translateY(-2px)}
+
+    /* INPUT */
+    .chat-input-area{padding:1rem 1.8rem;border-top:1px solid var(--border);display:flex;align-items:center;gap:0.8rem;background:var(--bg2)}
+    .chat-input{flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:100px;padding:0.75rem 1.3rem;color:var(--text);font-size:0.9rem;font-family:'DM Sans',sans-serif;outline:none;transition:border-color 0.2s}
+    .chat-input:focus{border-color:rgba(245,200,66,0.4)}
+    .chat-input::placeholder{color:var(--muted)}
+    .send-btn{background:linear-gradient(135deg,var(--gold),#E8A800);border:none;border-radius:50%;width:42px;height:42px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.1rem;transition:transform 0.2s,box-shadow 0.2s;flex-shrink:0}
+    .send-btn:hover{transform:scale(1.1);box-shadow:0 6px 20px rgba(245,200,66,0.4)}
+    .voice-btn{background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:50%;width:42px;height:42px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.1rem;transition:all 0.2s;color:var(--muted);flex-shrink:0}
+    .voice-btn:hover{border-color:rgba(245,200,66,0.3);color:var(--gold)}
+
+    /* QUIZ OVERLAY */
+    .quiz-overlay{position:fixed;inset:0;z-index:200;background:rgba(6,10,18,0.9);backdrop-filter:blur(12px);display:none;align-items:center;justify-content:center;padding:1.5rem}
+    .quiz-overlay.open{display:flex}
+    .quiz-card{background:var(--bg2);border:1px solid rgba(245,200,66,0.2);border-radius:24px;max-width:520px;width:100%;padding:2.5rem;box-shadow:0 30px 80px rgba(0,0,0,0.6)}
+    .quiz-card h3{font-family:'Syne',sans-serif;font-weight:800;font-size:1.3rem;margin-bottom:0.4rem}
+    .quiz-card p{color:var(--muted);font-size:0.9rem;margin-bottom:1.5rem}
+    .quiz-q{margin-bottom:1.3rem}
+    .quiz-q label{display:block;font-size:0.88rem;font-weight:600;margin-bottom:0.5rem;color:var(--text)}
+    .quiz-opts{display:flex;gap:0.5rem}
+    .quiz-opt{flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:0.6rem;text-align:center;cursor:pointer;font-size:0.82rem;font-weight:500;transition:all 0.2s;color:var(--muted);font-family:'DM Sans',sans-serif}
+    .quiz-opt:hover,.quiz-opt.selected{border-color:var(--gold);color:var(--gold);background:rgba(245,200,66,0.08)}
+    .quiz-submit{background:linear-gradient(135deg,var(--gold),#E8A800);color:var(--bg);border:none;border-radius:100px;padding:0.75rem 2rem;font-weight:700;font-size:0.95rem;cursor:pointer;width:100%;margin-top:1rem;transition:transform 0.2s;font-family:'DM Sans',sans-serif}
+    .quiz-submit:hover{transform:translateY(-2px)}
+    .quiz-close{position:absolute;top:1rem;right:1rem;background:none;border:none;color:var(--muted);font-size:1.3rem;cursor:pointer}
+
+    @media(max-width:768px){.sidebar{display:none}.chat-messages{padding:1rem}.chat-input-area{padding:0.8rem}.quick-replies{padding:0.5rem 1rem}}
+
+    /* ── AUTH MODAL ── */
+    .auth-overlay{position:fixed;inset:0;z-index:20000;background:rgba(6,10,18,0.92);backdrop-filter:blur(16px);display:flex;align-items:center;justify-content:center;padding:1.5rem;opacity:0;pointer-events:none;visibility:hidden;transition:opacity 0.3s ease,visibility 0.3s ease}
+    .auth-overlay.open{opacity:1;pointer-events:all;visibility:visible}
+    .auth-modal{background:var(--bg2);border:1px solid rgba(245,200,66,0.2);border-radius:24px;max-width:420px;width:100%;padding:2rem;position:relative;box-shadow:0 40px 80px rgba(0,0,0,0.7);transform:translateY(24px) scale(0.97);transition:transform 0.3s ease}
+    .auth-overlay.open .auth-modal{transform:translateY(0) scale(1)}
+    .auth-modal-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:1.1rem;background:linear-gradient(90deg,var(--gold),var(--emerald));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:0.3rem}
+    .auth-modal-sub{color:var(--muted);font-size:0.82rem;margin-bottom:1.4rem}
+    .auth-tabs{display:flex;gap:0;background:var(--bg3);border-radius:12px;padding:4px;margin-bottom:1.4rem}
+    .auth-tab{flex:1;background:none;border:none;border-radius:9px;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:0.85rem;font-weight:600;padding:0.5rem;cursor:pointer;transition:all 0.2s}
+    .auth-tab.active{background:var(--bg2);color:var(--text);box-shadow:0 2px 8px rgba(0,0,0,0.3)}
+    .auth-form{display:none;flex-direction:column;gap:0.85rem}
+    .auth-form.active{display:flex}
+    .auth-label{font-size:0.78rem;font-weight:600;color:var(--muted);margin-bottom:0.2rem;display:block}
+    .auth-input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:0.7rem 1rem;color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.88rem;outline:none;transition:border-color 0.2s}
+    .auth-input:focus{border-color:rgba(245,200,66,0.5)}
+    .auth-input::placeholder{color:var(--muted)}
+    .auth-consent{display:flex;gap:0.5rem;align-items:flex-start}
+    .auth-consent input[type=checkbox]{margin-top:3px;accent-color:var(--gold);flex-shrink:0}
+    .auth-consent label{font-size:0.75rem;color:var(--muted);line-height:1.5}
+    .auth-consent a{color:var(--gold);text-decoration:none}
+    .auth-btn{background:linear-gradient(135deg,var(--gold),#E8A800);color:var(--bg);border:none;border-radius:100px;padding:0.75rem;font-family:'DM Sans',sans-serif;font-weight:700;font-size:0.92rem;cursor:pointer;transition:transform 0.2s,box-shadow 0.2s;margin-top:0.1rem}
+    .auth-btn:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(245,200,66,0.4)}
+    .auth-btn:disabled{opacity:0.6;cursor:not-allowed;transform:none}
+    .auth-error{color:var(--coral);font-size:0.8rem;text-align:center;display:none}
+    .auth-error.visible{display:block}
+    .auth-close{position:absolute;top:1rem;right:1rem;background:none;border:none;color:var(--muted);font-size:1.2rem;cursor:pointer;transition:color 0.2s}
+    .auth-close:hover{color:var(--text)}
+
+    /* ── NAV AUTH ── */
+    .nav-auth{display:flex;align-items:center;gap:0.6rem}
+    .nav-auth-btn{background:none;border:1px solid var(--border);border-radius:100px;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:0.8rem;font-weight:500;padding:0.4rem 1rem;cursor:pointer;transition:all 0.2s;white-space:nowrap}
+    .nav-auth-btn:hover{border-color:rgba(255,255,255,0.2);color:var(--text)}
+    .nav-auth-btn.primary{background:var(--gold);border-color:var(--gold);color:var(--bg);font-weight:700}
+    .nav-auth-btn.primary:hover{box-shadow:0 6px 18px rgba(245,200,66,0.4);transform:translateY(-1px)}
+    .nav-user-chip{display:none;align-items:center;gap:0.45rem;background:var(--bg3);border:1px solid var(--border);border-radius:100px;padding:0.35rem 0.9rem 0.35rem 0.4rem;font-size:0.8rem;font-weight:600;color:var(--text)}
+    .nav-user-chip.visible{display:flex}
+    .nav-user-avatar{width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--emerald));display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:800;color:var(--bg)}
+    .nav-logout{background:none;border:none;color:var(--muted);font-size:0.75rem;cursor:pointer;padding:0.35rem 0.75rem;border-radius:100px;border:1px solid transparent;transition:all 0.2s;font-family:'DM Sans',sans-serif}
+    .nav-logout:hover{border-color:var(--coral);color:var(--coral)}
+
+    /* ── USER / GUEST BADGE ── */
+    .user-badge{display:inline-flex;align-items:center;gap:0.35rem;padding:0.25rem 0.75rem;border-radius:100px;font-size:0.72rem;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;margin-left:0.5rem}
+    .badge-guest{background:rgba(122,139,160,0.12);color:var(--muted);border:1px solid rgba(122,139,160,0.2)}
+    .badge-user{background:rgba(0,217,126,0.12);color:var(--emerald);border:1px solid rgba(0,217,126,0.25)}
+
+    /* ── EMAIL BANNER ── */
+    .email-banner{position:fixed;bottom:0;left:0;right:0;z-index:15000;background:var(--bg2);border-top:1px solid rgba(245,200,66,0.2);padding:0.9rem 4vw;display:none;align-items:center;justify-content:space-between;gap:1.2rem;flex-wrap:wrap;box-shadow:0 -6px 24px rgba(0,0,0,0.4);animation:slideUp 0.4s ease both}
+    .email-banner.visible{display:flex}
+    @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+    .email-banner-text{flex:1;min-width:200px}
+    .email-banner-text strong{color:var(--gold);font-size:0.9rem}
+    .email-banner-text p{color:var(--muted);font-size:0.78rem;margin-top:0.15rem}
+    .email-banner-form{display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap}
+    .email-banner-input{background:var(--bg3);border:1px solid var(--border);border-radius:100px;padding:0.55rem 1.1rem;color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.85rem;outline:none;transition:border-color 0.2s;min-width:200px}
+    .email-banner-input:focus{border-color:rgba(245,200,66,0.4)}
+    .email-banner-submit{background:linear-gradient(135deg,var(--gold),#E8A800);color:var(--bg);border:none;border-radius:100px;padding:0.55rem 1.2rem;font-family:'DM Sans',sans-serif;font-weight:700;font-size:0.85rem;cursor:pointer;white-space:nowrap;transition:transform 0.2s}
+    .email-banner-submit:hover{transform:translateY(-1px)}
+    .email-banner-consent{width:100%;display:flex;align-items:center;gap:0.4rem}
+    .email-banner-consent input{accent-color:var(--gold)}
+    .email-banner-consent label{font-size:0.72rem;color:var(--muted)}
+    .email-banner-close{background:none;border:none;color:var(--muted);font-size:1rem;cursor:pointer;padding:0.3rem;transition:color 0.2s;flex-shrink:0}
+    .email-banner-close:hover{color:var(--text)}
+    .email-banner-success{color:var(--emerald);font-size:0.85rem;font-weight:600;display:none}
+    .email-banner-success.visible{display:block}
+  </style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════ AUTH MODAL ════════════════════════════════════ -->
+<div class="auth-overlay" id="authOverlay" onclick="_overlayClose(event)">
+  <div class="auth-modal">
+    <button class="auth-close" onclick="closeAuth()">✕</button>
+    <div class="auth-modal-logo">InvestIQ ⚡</div>
+    <div class="auth-modal-sub">Sign up for personalised AI insights</div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tabLogin" onclick="switchAuthTab('login')">Log In</button>
+      <button class="auth-tab" id="tabSignup" onclick="switchAuthTab('signup')">Sign Up</button>
+    </div>
+    <!-- LOGIN -->
+    <form class="auth-form active" id="formLogin" onsubmit="submitLogin(event)">
+      <div><label class="auth-label">Email</label><input class="auth-input" id="loginEmail" type="email" placeholder="you@example.com" required autocomplete="email"></div>
+      <div><label class="auth-label">Password</label><input class="auth-input" id="loginPassword" type="password" placeholder="Your password" required autocomplete="current-password"></div>
+      <div class="auth-error" id="loginError"></div>
+      <button class="auth-btn" type="submit" id="loginBtn">Log In →</button>
+      <p style="text-align:center;font-size:0.78rem;color:var(--muted)">No account? <a href="#" style="color:var(--gold)" onclick="switchAuthTab('signup');return false;">Sign up</a></p>
+    </form>
+    <!-- SIGNUP -->
+    <form class="auth-form" id="formSignup" onsubmit="submitSignup(event)">
+      <div><label class="auth-label">Full name</label><input class="auth-input" id="signupName" type="text" placeholder="Your name" required autocomplete="name"></div>
+      <div><label class="auth-label">Email</label><input class="auth-input" id="signupEmail" type="email" placeholder="you@example.com" required autocomplete="email"></div>
+      <div><label class="auth-label">Password <span style="color:var(--muted);font-weight:400">(min 6 chars)</span></label><input class="auth-input" id="signupPassword" type="password" placeholder="Strong password" required autocomplete="new-password" minlength="6"></div>
+      <div class="auth-consent">
+        <input type="checkbox" id="signupConsent" required>
+        <label for="signupConsent">I agree to InvestIQ's <a href="#" onclick="return false;">Privacy Policy</a> and consent to data storage for personalised advice. (Required)</label>
+      </div>
+      <div class="auth-error" id="signupError"></div>
+      <button class="auth-btn" type="submit" id="signupBtn">Create Account →</button>
+      <p style="text-align:center;font-size:0.78rem;color:var(--muted)">Have an account? <a href="#" style="color:var(--gold)" onclick="switchAuthTab('login');return false;">Log in</a></p>
+    </form>
+  </div>
+</div>
+
+<nav>
+  <a href="index.html" class="nav-logo">InvestIQ</a>
+  <div class="nav-auth" id="navAuth">
+    <div id="navGuest" style="display:flex;gap:0.6rem;align-items:center">
+      <button class="nav-auth-btn" onclick="openAuth('login')">Log In</button>
+      <button class="nav-auth-btn primary" onclick="openAuth('signup')">Sign Up</button>
+    </div>
+    <div class="nav-user-chip" id="navUser">
+      <div class="nav-user-avatar" id="navAvatar">?</div>
+      <span id="navName">User</span>
+    </div>
+    <button class="nav-logout" id="navLogout" style="display:none" onclick="authLogout()">Log out</button>
+  </div>
+  <a href="index.html" class="nav-back">← Back to Home</a>
+</nav>
+
+<div class="app-container">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-title">Quick Topics</div>
+    <button class="sidebar-btn" onclick="askQ('What is a mutual fund?')"><span class="emoji">🏦</span>Mutual Funds</button>
+    <button class="sidebar-btn" onclick="askQ('Tell me about SIP')"><span class="emoji">📅</span>SIP Guide</button>
+    <button class="sidebar-btn" onclick="askQ('What are stocks?')"><span class="emoji">📈</span>Stock Basics</button>
+    <button class="sidebar-btn" onclick="askQ('Tell me about risk')"><span class="emoji">⚠️</span>Risk Analysis</button>
+    <button class="sidebar-btn" onclick="askQ('Help me create a budget')"><span class="emoji">💳</span>Budgeting Tips</button>
+    <button class="sidebar-btn" onclick="askQ('What are dividends?')"><span class="emoji">💰</span>Dividends</button>
+    <button class="sidebar-btn" onclick="askQ('Tell me about tax saving')"><span class="emoji">🧾</span>Tax Saving</button>
+    <button class="sidebar-btn" onclick="askQ('How does your AI predict?')"><span class="emoji">🤖</span>How AI Works</button>
+
+    <div class="sidebar-section">
+      <div class="sidebar-title">Tools</div>
+      <button class="sidebar-btn" onclick="openQuiz()"><span class="emoji">🎯</span>Risk Profile Quiz</button>
+      <button class="sidebar-btn" onclick="askQ('What is my portfolio allocation?')"><span class="emoji">🗂️</span>Portfolio Advice</button>
+      <button class="sidebar-btn" onclick="askQ('Tell me about retirement planning')"><span class="emoji">🎯</span>Retirement Planner</button>
+    </div>
+
+    <div id="riskBadgeArea"></div>
+  </aside>
+
+  <!-- CHAT -->
+  <main class="chat-area">
+    <div class="chat-header">
+      <div class="chat-header-icon">🤖</div>
+      <div class="chat-header-text">
+        <h2>InvestIQ AI Assistant</h2>
+        <p><span class="online-dot"></span> Online — Ready to help</p>
+      </div>
+      <div id="userBadge" class="user-badge badge-guest">👤 Guest</div>
+    </div>
+
+    <div class="chat-messages" id="chatMessages"></div>
+
+    <div class="quick-replies" id="quickReplies">
+      <button class="qr-btn" onclick="askQ('Hello')">👋 Say Hello</button>
+      <button class="qr-btn" onclick="askQ('What can you do?')">❓ What can you do?</button>
+      <button class="qr-btn" onclick="askQ('How to invest in SIP?')">📅 SIP Guide</button>
+      <button class="qr-btn" onclick="askQ('Tell me about risk')">⚠️ Risk Explainer</button>
+      <button class="qr-btn" onclick="openQuiz()">🎯 Risk Quiz</button>
+    </div>
+
+    <div class="chat-input-area">
+      <input type="text" class="chat-input" id="userInput" placeholder="Ask about stocks, investments, budgeting…" autocomplete="off">
+      <button class="send-btn" onclick="sendMessage()" title="Send">➤</button>
+      <button class="voice-btn" onclick="startVoice()" title="Voice Input">🎤</button>
+    </div>
+  </main>
+</div>
+
+<!-- RISK QUIZ OVERLAY -->
+<div class="quiz-overlay" id="quizOverlay">
+  <div class="quiz-card" style="position:relative">
+    <button class="quiz-close" onclick="closeQuiz()">✕</button>
+    <h3>🎯 Risk Profile Assessment</h3>
+    <p>Answer 3 quick questions to determine your investor type.</p>
+
+    <div class="quiz-q">
+      <label>1. How would you react to a 20% market drop?</label>
+      <div class="quiz-opts" data-q="0">
+        <div class="quiz-opt" data-v="1" onclick="pickOpt(this)">Sell everything</div>
+        <div class="quiz-opt" data-v="2" onclick="pickOpt(this)">Hold steady</div>
+        <div class="quiz-opt" data-v="3" onclick="pickOpt(this)">Buy the dip</div>
+      </div>
+    </div>
+    <div class="quiz-q">
+      <label>2. Your investment horizon?</label>
+      <div class="quiz-opts" data-q="1">
+        <div class="quiz-opt" data-v="1" onclick="pickOpt(this)">1–3 years</div>
+        <div class="quiz-opt" data-v="2" onclick="pickOpt(this)">3–7 years</div>
+        <div class="quiz-opt" data-v="3" onclick="pickOpt(this)">7+ years</div>
+      </div>
+    </div>
+    <div class="quiz-q">
+      <label>3. Preferred return vs safety balance?</label>
+      <div class="quiz-opts" data-q="2">
+        <div class="quiz-opt" data-v="1" onclick="pickOpt(this)">Safety first</div>
+        <div class="quiz-opt" data-v="2" onclick="pickOpt(this)">Balanced</div>
+        <div class="quiz-opt" data-v="3" onclick="pickOpt(this)">Max returns</div>
+      </div>
+    </div>
+    <button class="quiz-submit" onclick="submitQuiz()">Get My Risk Profile</button>
+  </div>
+</div>
+
+<script>
+const chatEl=document.getElementById('chatMessages');
+const inputEl=document.getElementById('userInput');
+let quizAnswers=[0,0,0];
+let userRiskTier=null;
+
+// Load history
+(function(){
+  try{const h=JSON.parse(sessionStorage.getItem('iq_chat')||'[]');h.forEach(m=>addMsgRaw(m.text,m.type));}catch(e){}
+  if(!chatEl.children.length){
+    addBot("Welcome to **InvestIQ AI** 👋\n\nI'm your personal financial advisor. Ask me about stocks, mutual funds, SIPs, budgeting, risk analysis, tax saving — or take the **Risk Profile Quiz** to get personalised portfolio advice!\n\nType **help** to see everything I can do.");
+  }
+})();
+
+inputEl.addEventListener('keydown',e=>{if(e.key==='Enter')sendMessage()});
+
+function askQ(q){inputEl.value=q;sendMessage()}
+
+function sendMessage(){
+  const msg=inputEl.value.trim();if(!msg)return;
+  addUser(msg);inputEl.value='';
+  showTyping();
+  setTimeout(()=>{removeTyping();const r=getResponse(msg);addBot(r)},800+Math.random()*500);
+}
+
+function addUser(t){addMsg(t,'msg-user');saveMsg(t,'msg-user')}
+function addBot(t){addMsg(t,'msg-bot');saveMsg(t,'msg-bot')}
+
+function addMsg(text,type){
+  const div=document.createElement('div');
+  div.className='msg '+type;
+  if(type==='msg-bot'){
+    div.innerHTML='<div class="label">InvestIQ AI</div>'+formatText(text);
+  }else{div.textContent=text}
+  chatEl.appendChild(div);chatEl.scrollTop=chatEl.scrollHeight;
+}
+function addMsgRaw(text,type){
+  const div=document.createElement('div');div.className='msg '+type;
+  if(type==='msg-bot'){div.innerHTML='<div class="label">InvestIQ AI</div>'+formatText(text)}
+  else{div.textContent=text}
+  chatEl.appendChild(div);
+}
+
+function formatText(t){
+  return t.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>').replace(/• /g,'<br>• ');
+}
+
+function saveMsg(t,type){
+  try{const h=JSON.parse(sessionStorage.getItem('iq_chat')||'[]');h.push({text:t,type});if(h.length>50)h.splice(0,h.length-50);sessionStorage.setItem('iq_chat',JSON.stringify(h))}catch(e){}
+}
+
+function showTyping(){const d=document.createElement('div');d.className='typing-indicator';d.id='typing';d.innerHTML='<span></span><span></span><span></span>';chatEl.appendChild(d);chatEl.scrollTop=chatEl.scrollHeight}
+function removeTyping(){const t=document.getElementById('typing');if(t)t.remove()}
+
+// QUIZ
+function openQuiz(){document.getElementById('quizOverlay').classList.add('open')}
+function closeQuiz(){document.getElementById('quizOverlay').classList.remove('open')}
+function pickOpt(el){
+  el.parentElement.querySelectorAll('.quiz-opt').forEach(o=>o.classList.remove('selected'));
+  el.classList.add('selected');
+  const qi=parseInt(el.parentElement.dataset.q);
+  quizAnswers[qi]=parseInt(el.dataset.v);
+}
+function submitQuiz(){
+  if(quizAnswers.includes(0)){alert('Please answer all 3 questions.');return}
+  const score=quizAnswers.reduce((a,b)=>a+b,0);
+  let tier='moderate';
+  if(score<=5)tier='conservative';else if(score>=8)tier='aggressive';
+  userRiskTier=tier;closeQuiz();
+  document.getElementById('riskBadgeArea').innerHTML=`<div class="risk-badge risk-${tier}">🎯 ${tier.toUpperCase()} INVESTOR</div>`;
+  const advice={
+    conservative:"Based on your quiz, you're a **Conservative Investor** 🛡️\n\n**Recommended Portfolio:**\n• 25% Equity (Index Funds)\n• 55% Debt (PPF, G-Secs, Bond Funds)\n• 10% Gold (SGBs)\n• 10% Cash/FD\n\n**Top Products:** PPF (7.1% tax-free), Liquid Funds, Conservative Hybrid Funds, Tax-Saver FDs.\n\nFocus on capital preservation and steady, inflation-beating returns.",
+    moderate:"Based on your quiz, you're a **Moderate Investor** ⚖️\n\n**Recommended Portfolio:**\n• 55% Equity (NIFTY 50 Index + Flexi-Cap)\n• 30% Debt (PPF + Corporate Bonds)\n• 8% Gold (SGBs)\n• 7% Cash/Liquid\n\n**Top Products:** NIFTY 50 Index Fund (SIP), ELSS for tax saving, PPF, Sovereign Gold Bonds.\n\nBalance growth and safety — SIPs are your best friend!",
+    aggressive:"Based on your quiz, you're an **Aggressive Investor** 🚀\n\n**Recommended Portfolio:**\n• 75% Equity (Mid/Small-cap + Direct Stocks)\n• 15% Debt (Short-duration bonds)\n• 5% Gold (ETFs)\n• 5% Cash\n\n**Top Products:** Mid-cap Index Funds, IT Sector Funds (TCS, Infosys), US Tech ETFs, NPS Equity.\n\nMaximise compounding — stay disciplined through volatility!"
+  };
+  addBot(advice[tier]);
+}
+
+// VOICE
+function startVoice(){
+  try{
+    const r=new(window.SpeechRecognition||window.webkitSpeechRecognition)();
+    r.lang='en-US';r.start();
+    r.onresult=e=>{inputEl.value=e.results[0][0].transcript;sendMessage()};
+    r.onerror=()=>addBot("Voice recognition is not available in this browser. Please type your question instead.");
+  }catch(e){addBot("Voice input is not supported in this browser.")}
+}
+
+// NLP RESPONSE ENGINE (30+ topics)
+function getResponse(input){
+  const m=input.toLowerCase();
+
+  if(["hi","hello","hey","good morning","good evening"].some(w=>m.includes(w)))
+    return "Hello! 👋 I'm **InvestIQ AI**, your personal financial advisor. I can help with stocks, mutual funds, budgeting, risk analysis, and investment recommendations. What would you like to explore?";
+
+  if(m.includes("what is a stock")||m.includes("what are stocks"))
+    return "📈 A **stock** (share) represents ownership in a company. When you buy a stock, you become a part-owner and can profit through price appreciation and dividends. Indian stocks trade on **NSE** (NIFTY 50) and **BSE** (SENSEX).";
+
+  if(m.includes("nse")||m.includes("bse"))
+    return "🏛️ **NSE** (National Stock Exchange) and **BSE** (Bombay Stock Exchange) are India's two premier stock exchanges. NSE hosts the NIFTY 50 index; BSE hosts the SENSEX. Both are regulated by SEBI.";
+
+  if(m.includes("dividend"))
+    return "💰 **Dividends** are a share of company profits paid to shareholders. In India, dividends are taxed at your income slab rate. TCS, Infosys, and HCL Tech are known for consistent dividend payments.";
+
+  if(m.includes("stock")||m.includes("share")||m.includes("equity"))
+    return "📊 **Equities** offer higher long-term returns but come with volatility. The NIFTY 50 has delivered ~12–14% CAGR over the past decade. Ideal for investors with a 5+ year horizon.";
+
+  if(m.includes("mutual fund")||m.includes("mf "))
+    return "🏦 **Mutual Funds** pool money from investors to invest in a diversified portfolio of stocks, bonds, or other assets, managed by professionals. Categories: Equity, Debt, Hybrid, and Index Funds. Regulated by SEBI.";
+
+  if(m.includes("sip"))
+    return "📅 **SIP (Systematic Investment Plan)** lets you invest a fixed amount monthly — as low as ₹500. SIPs average out volatility through rupee-cost averaging. ₹5,000/month at 12% for 30 years → **₹1.7 Crore**! Start early.";
+
+  if(m.includes("etf"))
+    return "📦 **ETFs** track an index and trade like stocks. Low cost (~0.1–0.2% expense ratio), great diversification. Popular: NIFTY BeES, GOLDBEES, Bharat Bond ETF.";
+
+  if(m.includes("index fund"))
+    return "📉 **Index Funds** passively track NIFTY 50 or SENSEX with ~0.1% expense ratio. They consistently outperform most active funds over 10+ years. Ideal for passive investors.";
+
+  if(m.includes("bond")||m.includes("g-sec"))
+    return "📜 **Bonds** are debt instruments with periodic interest. G-Secs are the safest. **Sovereign Gold Bonds (SGBs)** offer 2.5% p.a. interest + gold appreciation — tax-free on maturity!";
+
+  if(m.includes("ppf")||m.includes("provident fund"))
+    return "🔒 **PPF** offers 7.1% p.a., fully tax-free (EEE status). Lock-in: 15 years. Max: ₹1.5L/year. Excellent for conservative investors seeking safe, guaranteed returns.";
+
+  if(m.includes("elss")||m.includes("tax sav")||m.includes("80c"))
+    return "🧾 **ELSS** qualifies for ₹1.5L deduction under Section 80C (saves up to ₹46,800 in taxes). Shortest lock-in among 80C options: just 3 years. Offers equity returns (~12–15% CAGR).";
+
+  if(m.includes("invest"))
+    return "💼 Smart investing starts with defining your **goal, horizon, and risk appetite**. Rule of thumb: (100 - your age) = equity %. Diversify across equity, debt, and gold. Start SIPs immediately!";
+
+  if(m.includes("risk")||m.includes("volatil"))
+    return "⚠️ **Investment risk types:**\n• **Market risk** — overall decline\n• **Credit risk** — issuer default\n• **Liquidity risk** — can't sell when needed\n• **Inflation risk** — returns < inflation\n\nDiversification is the best risk management tool. Take the **Risk Quiz** for your profile!";
+
+  if(m.includes("diversif")||m.includes("portfolio")||m.includes("allocation"))
+    return "🗂️ **Balanced Portfolio (Moderate):**\n• 55% Equity (index + flexi-cap)\n• 30% Debt (bonds, PPF, FDs)\n• 8% Gold (SGBs/ETFs)\n• 7% Cash/Liquid\n\nRebalance every 6–12 months. Take the **Risk Quiz** for your personalised mix!";
+
+  if(m.includes("hedge")||m.includes("hedging"))
+    return "🛡️ **Hedging** reduces downside risk:\n• Buy put options on index\n• Allocate to gold (inverse correlation)\n• Hold short-duration debt in uncertain markets\n• Invest in defensive sectors (FMCG, Pharma)";
+
+  if(m.includes("bull")&&m.includes("market"))
+    return "🐂 A **bull market** = sustained 20%+ gains. Driven by GDP growth, low unemployment, optimism. India's NIFTY has been broadly bullish 2020–2024. Strategy: stay invested, follow SIPs.";
+
+  if(m.includes("bear")&&m.includes("market"))
+    return "🐻 A **bear market** = 20%+ drop from highs. Strategy: continue SIPs (buy cheap), avoid panic selling, consider increasing debt allocation temporarily.";
+
+  if(m.includes("p/e")||m.includes("pe ratio"))
+    return "📐 **P/E Ratio** = Price ÷ Earnings. NIFTY 50 P/E of 20–22 is fair; >25 = overvalued; <18 = undervalued. Always compare within the same sector.";
+
+  if(m.includes("market cap"))
+    return "🏢 **Market Cap** = Price × Shares.\n• Large-cap: >₹20,000 Cr (TCS, Infosys) — stable\n• Mid-cap: ₹5,000–20,000 Cr — growth\n• Small-cap: <₹5,000 Cr — high risk, high reward";
+
+  if(m.includes("inflation"))
+    return "📊 India's CPI inflation averages ~5–6% p.a. Investments MUST beat this. Equities (12–14% CAGR) do. FDs and savings accounts often fail to beat inflation after tax.";
+
+  if(m.includes("nifty")||m.includes("sensex"))
+    return "📈 **NIFTY 50** = top 50 NSE companies. **SENSEX** = top 30 BSE companies. NIFTY has returned ~12% CAGR over 20 years — ideal via index fund SIPs.";
+
+  if(m.includes("budget")||m.includes("expense"))
+    return "💳 **50-30-20 Rule:**\n• 50% → Needs (rent, groceries, EMIs)\n• 30% → Wants (dining, travel)\n• 20% → Savings & Investments\n\nTrack spending with Money View, Walnut, or ET Money.";
+
+  if(m.includes("saving")||m.includes("emergency"))
+    return "🏦 Build a **6-month emergency fund** first (in liquid fund/savings account). Then automate investing via SIPs. Consistency beats timing!";
+
+  if(m.includes("emi")||m.includes("loan")||m.includes("debt"))
+    return "🏠 Keep total EMIs below 40% of take-home pay. Pay off high-interest debt first (credit cards 18–24%). Never invest in equities with borrowed money.";
+
+  if(m.includes("tax"))
+    return "🧾 **Tax Saving (FY 2025–26):**\n• 80C (₹1.5L): ELSS, PPF, EPF, NSC\n• 80D (₹25K–75K): Health insurance\n• LTCG on equity: 10% above ₹1L\n• STCG: 15%\n\nConsider New Tax Regime if deductions <₹3.75L.";
+
+  if(m.includes("retire"))
+    return "🎯 **25x Rule:** Need 25× annual expenses to retire. For ₹6L/year → ₹1.5 Cr corpus. Use NPS for extra ₹50K deduction (80CCD). Start early — time is your greatest asset!";
+
+  if(m.includes("predict")||m.includes("forecast")||m.includes("how")&&m.includes("work"))
+    return "🤖 **InvestIQ uses 4 ML models:**\n1. **Bidirectional LSTM** — deep learning on sequences\n2. **XGBoost** — gradient boosting with early stopping\n3. **Random Forest** — decision tree ensemble\n4. **Polynomial Regression** — baseline trend\n\nWeighted ensemble (LSTM 40% + XGB 35% + RF 25%) gives the final forecast using 30+ technical indicators.";
+
+  if(m.includes("accuracy")||m.includes("how accurate"))
+    return "📐 Typical accuracy:\n• LSTM: R² ~0.92–0.97, MAPE ~2–4%\n• XGBoost: R² ~0.95–0.98, MAPE ~1.5–3%\n• Random Forest: R² ~0.93–0.97\n\n⚠️ Past accuracy ≠ future guarantee. Always use your own judgement.";
+
+  if(m.includes("ai")||m.includes("machine learning")||m.includes("model"))
+    return "🧠 InvestIQ uses **Python + TensorFlow/Keras** (LSTM), XGBoost, and scikit-learn. It processes 30+ technical indicators per stock with automatic model caching and retraining support.";
+
+  if(m.includes("help")||m.includes("what can you do"))
+    return "🌟 **I can help you with:**\n• Stock analysis & price forecasts\n• Mutual fund & SIP guidance\n• Risk profiling & portfolio allocation\n• Budgeting & personal finance tips\n• Market concepts (P/E, bull/bear, inflation)\n• Tax-saving strategies\n• Retirement planning\n\nType any question or use the sidebar topics!";
+
+  if(m.includes("thank")||m.includes("bye"))
+    return "😊 You're welcome! Remember: **consistent investing beats market timing**. Come back anytime. Happy investing! 🚀";
+
+  return "🤔 I didn't fully understand that. Try asking about:\nstocks, mutual funds, SIPs, risk, budgeting, tax saving, retirement, market trends, or how our AI works.\n\nOr type **help** to see everything I can do!";
+}
+</script>
+
+<!-- ═════════════════════════════════ EMAIL BANNER ═════════════════════════════════ -->
+<div class="email-banner" id="emailBanner">
+  <div class="email-banner-text">
+    <strong>📬 Get Free Financial Alerts</strong>
+    <p>Enter your email to receive AI-powered market insights & personalised tips.</p>
+  </div>
+  <div class="email-banner-form" id="bannerFormContainer">
+    <input class="email-banner-input" id="bannerEmail" type="email" placeholder="your@email.com" autocomplete="email">
+    <button class="email-banner-submit" onclick="submitBannerEmail()">Subscribe →</button>
+    <div class="email-banner-consent">
+      <input type="checkbox" id="bannerConsent">
+      <label for="bannerConsent">I consent to marketing emails from InvestIQ. Unsubscribe anytime.</label>
+    </div>
+    <div class="email-banner-success" id="bannerSuccess">✅ You're subscribed!</div>
+  </div>
+  <button class="email-banner-close" onclick="dismissBanner()">✕</button>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+//  AUTH SYSTEM (chatbot.html)
+// ═══════════════════════════════════════════════════════
+const API = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost'
+  ? `${window.location.protocol}//${window.location.host}` : '';
+
+function _getToken() { return localStorage.getItem('iq_token'); }
+function _getUser()  { try { return JSON.parse(localStorage.getItem('iq_user') || 'null'); } catch { return null; } }
+function _setSession(token, user) { localStorage.setItem('iq_token', token); localStorage.setItem('iq_user', JSON.stringify(user)); }
+function _clearSession() { localStorage.removeItem('iq_token'); localStorage.removeItem('iq_user'); }
+
+function syncNavAuth() {
+  const user   = _getUser();
+  const guest  = document.getElementById('navGuest');
+  const chip   = document.getElementById('navUser');
+  const nameEl = document.getElementById('navName');
+  const avatar = document.getElementById('navAvatar');
+  const logout = document.getElementById('navLogout');
+  const badge  = document.getElementById('userBadge');
+  if (user) {
+    guest.style.display = 'none';
+    chip.classList.add('visible');
+    logout.style.display = 'block';
+    nameEl.textContent = user.name.split(' ')[0];
+    avatar.textContent = user.name.charAt(0).toUpperCase();
+    if (badge) { badge.className = 'user-badge badge-user'; badge.textContent = '🟢 ' + user.name.split(' ')[0]; }
+  } else {
+    guest.style.display = 'flex';
+    chip.classList.remove('visible');
+    logout.style.display = 'none';
+    if (badge) { badge.className = 'user-badge badge-guest'; badge.textContent = '👤 Guest'; }
+  }
+}
+
+function authLogout() { _clearSession(); syncNavAuth(); showBannerIfNeeded(); }
+
+// Auth Modal
+function openAuth(tab) { document.getElementById('authOverlay').classList.add('open'); document.body.style.overflow='hidden'; switchAuthTab(tab||'login'); }
+function closeAuth() { document.getElementById('authOverlay').classList.remove('open'); document.body.style.overflow=''; }
+function _overlayClose(e) { if(e.target===document.getElementById('authOverlay')) closeAuth(); }
+function switchAuthTab(tab) {
+  ['login','signup'].forEach(t => {
+    document.getElementById('tab'+t.charAt(0).toUpperCase()+t.slice(1)).classList.toggle('active',t===tab);
+    document.getElementById('form'+t.charAt(0).toUpperCase()+t.slice(1)).classList.toggle('active',t===tab);
+  });
+}
+function _setAuthError(id, msg) { const el=document.getElementById(id); el.textContent=msg; el.classList.toggle('visible',!!msg); }
+function _onAuthSuccess(data) { _setSession(data.token,data.user); syncNavAuth(); closeAuth(); showBannerIfNeeded(); }
+
+async function submitLogin(e) {
+  e.preventDefault();
+  const btn=document.getElementById('loginBtn'); btn.disabled=true; btn.textContent='Logging in…';
+  _setAuthError('loginError','');
+  try {
+    const res=await fetch(`${API}/api/auth/login`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:document.getElementById('loginEmail').value.trim(),password:document.getElementById('loginPassword').value})});
+    const data=await res.json();
+    if(!res.ok) throw new Error(data.error||'Login failed');
+    _onAuthSuccess(data);
+  } catch(err){ _setAuthError('loginError',err.message); }
+  finally{ btn.disabled=false; btn.textContent='Log In →'; }
+}
+
+async function submitSignup(e) {
+  e.preventDefault();
+  const btn=document.getElementById('signupBtn'); btn.disabled=true; btn.textContent='Creating…';
+  _setAuthError('signupError','');
+  try {
+    const res=await fetch(`${API}/api/auth/register`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:document.getElementById('signupName').value.trim(),email:document.getElementById('signupEmail').value.trim(),password:document.getElementById('signupPassword').value})});
+    const data=await res.json();
+    if(!res.ok) throw new Error(data.error||'Registration failed');
+    _onAuthSuccess(data);
+  } catch(err){ _setAuthError('signupError',err.message); }
+  finally{ btn.disabled=false; btn.textContent='Create Account →'; }
+}
+
+// Email Banner
+function showBannerIfNeeded() {
+  const collected=localStorage.getItem('iq_email_collected')==='true';
+  const loggedIn=!!_getUser();
+  const banner=document.getElementById('emailBanner');
+  if(!collected&&!loggedIn){ setTimeout(()=>banner.classList.add('visible'),5000); }
+  else{ banner.classList.remove('visible'); if(loggedIn&&!collected) _autoCollectEmail(); }
+}
+function dismissBanner(){ document.getElementById('emailBanner').classList.remove('visible'); localStorage.setItem('iq_email_collected','dismissed'); }
+async function submitBannerEmail() {
+  const email=document.getElementById('bannerEmail').value.trim();
+  const consent=document.getElementById('bannerConsent').checked;
+  if(!email){ alert('Please enter your email.'); return; }
+  if(!consent){ alert('Please check the consent checkbox.'); return; }
+  try {
+    const token=_getToken();
+    const res=await fetch(`${API}/api/collect-email`,{method:'POST',headers:Object.assign({'Content-Type':'application/json'},token?{'Authorization':'Bearer '+token}:{}),body:JSON.stringify({email,consent:true})});
+    const data=await res.json();
+    if(!res.ok) throw new Error(data.error);
+    localStorage.setItem('iq_email_collected','true');
+    document.getElementById('bannerFormContainer').style.display='none';
+    document.getElementById('bannerSuccess').classList.add('visible');
+    setTimeout(()=>document.getElementById('emailBanner').classList.remove('visible'),3000);
+  } catch(err){ alert('Error: '+err.message); }
+}
+async function _autoCollectEmail() {
+  const user=_getUser(); const token=_getToken(); if(!user) return;
+  try { await fetch(`${API}/api/collect-email`,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({email:user.email,consent:true,name:user.name})}); localStorage.setItem('iq_email_collected','true'); } catch{}
+}
+
+// Init
+document.addEventListener('DOMContentLoaded',()=>{ syncNavAuth(); showBannerIfNeeded(); });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeAuth(); });
+</script>
+</body>
+</html>

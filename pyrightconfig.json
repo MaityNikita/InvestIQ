@@ -1,0 +1,9 @@
+{
+  "pythonVersion": "3.14",
+  "pythonPlatform": "Windows",
+  "pythonPath": "C:/Users/nikit/AppData/Local/Programs/Python/Python314-64/python.exe",
+  "include": ["."],
+  "exclude": ["**/__pycache__"],
+  "reportMissingImports": "none",
+  "reportMissingModuleSource": "none"
+}
