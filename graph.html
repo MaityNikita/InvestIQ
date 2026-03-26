@@ -1,0 +1,1061 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>InvestIQ — Dashboard</title>
+  <meta name="description" content="InvestIQ AI-Powered Investment Dashboard — Real-time market trends, stock comparison, risk analysis.">
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300&display=swap" rel="stylesheet">
+
+  <style>
+    /* ── DESIGN TOKENS ── */
+    :root {
+      --gold: #F5C842;
+      --gold-light: #FFE580;
+      --gold-dark: #C88A00;
+      --emerald: #00D97E;
+      --sky: #38BFFF;
+      --coral: #FF6B6B;
+      --purple: #A78BFA;
+      --bg: #060A12;
+      --bg2: #0C1220;
+      --bg3: #111927;
+      --bg4: #162032;
+      --text: #EEF2FF;
+      --muted: #7A8BA0;
+      --border: rgba(255, 255, 255, 0.07);
+      --gold-glow: rgba(245, 200, 66, 0.12);
+      --card-radius: 20px;
+      --transition: 0.3s cubic-bezier(.4, 0, .2, 1);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      overflow-x: hidden;
+      min-height: 100vh;
+    }
+
+    /* ── NOISE OVERLAY ── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none; z-index: 9999; opacity: 0.3;
+    }
+
+    /* ── AMBIENT ORBS ── */
+    .orb {
+      position: fixed; border-radius: 50%; filter: blur(100px); opacity: 0.12;
+      animation: drift 14s ease-in-out infinite alternate; pointer-events: none;
+    }
+    .orb-1 { width: 500px; height: 500px; background: var(--gold); top: -120px; left: -80px; }
+    .orb-2 { width: 400px; height: 400px; background: var(--emerald); bottom: -80px; right: -60px; animation-delay: -5s; }
+    .orb-3 { width: 300px; height: 300px; background: var(--sky); top: 50%; left: 60%; animation-delay: -9s; }
+
+    @keyframes drift {
+      from { transform: translate(0, 0) scale(1); }
+      to { transform: translate(30px, 20px) scale(1.08); }
+    }
+
+    /* ── TOP NAV ── */
+    .top-nav {
+      position: sticky; top: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1rem 2.5rem;
+      background: rgba(12, 18, 32, 0.8);
+      backdrop-filter: blur(24px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-left { display: flex; align-items: center; gap: 2rem; }
+
+    .nav-logo {
+      font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.35rem;
+      background: linear-gradient(90deg, var(--gold), var(--emerald));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      letter-spacing: -0.03em;
+    }
+
+    .nav-badge {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      background: var(--gold-glow); border: 1px solid rgba(245,200,66,0.25);
+      color: var(--gold); font-size: 0.7rem; font-weight: 700;
+      padding: 0.3rem 0.8rem; border-radius: 100px;
+      letter-spacing: 0.08em; text-transform: uppercase;
+    }
+    .nav-badge .dot {
+      width: 6px; height: 6px; border-radius: 50%; background: var(--emerald);
+      animation: pulse 1.8s ease infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.6); }
+    }
+
+    .nav-right { display: flex; align-items: center; gap: 1rem; }
+
+    .nav-time {
+      color: var(--muted); font-size: 0.82rem; font-weight: 500;
+      display: flex; align-items: center; gap: 0.4rem;
+    }
+
+    .nav-btn {
+      background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+      color: var(--bg); border: none; border-radius: 100px;
+      padding: 0.5rem 1.3rem; font-family: 'DM Sans', sans-serif;
+      font-weight: 700; font-size: 0.82rem; cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s; text-decoration: none;
+    }
+    .nav-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(245,200,66,0.35);
+    }
+
+    /* ── TABS ── */
+    .tab-bar {
+      display: flex; gap: 0; padding: 0 2.5rem;
+      background: var(--bg2); border-bottom: 1px solid var(--border);
+      overflow-x: auto;
+    }
+
+    .tab {
+      background: none; border: none; border-bottom: 2px solid transparent;
+      color: var(--muted); font-family: 'DM Sans', sans-serif;
+      font-size: 0.88rem; font-weight: 600; padding: 0.9rem 1.5rem;
+      cursor: pointer; white-space: nowrap; transition: color 0.2s, border-color 0.2s;
+      display: flex; align-items: center; gap: 0.5rem;
+    }
+    .tab:hover:not(.active) { color: var(--text); }
+    .tab.active { color: var(--gold); border-bottom-color: var(--gold); }
+
+    .tab-icon {
+      font-size: 1rem; opacity: 0.7;
+    }
+    .tab.active .tab-icon { opacity: 1; }
+
+    /* ── PANEL SYSTEM ── */
+    .panel { display: none; animation: fadeUp 0.45s ease both; }
+    .panel.active { display: block; }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(18px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── MAIN CONTENT ── */
+    .main { padding: 2rem 2.5rem 3rem; max-width: 1440px; margin: 0 auto; }
+
+    /* ── SUMMARY CARDS (top KPI strip) ── */
+    .summary-strip {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.2rem;
+      margin-bottom: 2rem;
+    }
+
+    .summary-card {
+      background: var(--bg3); border: 1px solid var(--border);
+      border-radius: var(--card-radius); padding: 1.4rem 1.6rem;
+      position: relative; overflow: hidden;
+      transition: transform var(--transition), border-color var(--transition);
+    }
+    .summary-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(245,200,66,0.2);
+    }
+    .summary-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, transparent, var(--sc-color, var(--gold)), transparent);
+      opacity: 0; transition: opacity 0.3s;
+    }
+    .summary-card:hover::before { opacity: 1; }
+
+    .sc-label {
+      font-size: 0.78rem; color: var(--muted); font-weight: 500;
+      text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.5rem;
+      display: flex; align-items: center; gap: 0.4rem;
+    }
+    .sc-label-icon { font-size: 0.9rem; }
+
+    .sc-value {
+      font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.8rem;
+      letter-spacing: -0.03em;
+      background: linear-gradient(135deg, var(--sc-color, var(--gold)), var(--sc-end, var(--emerald)));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+
+    .sc-change {
+      font-size: 0.78rem; font-weight: 600; margin-top: 0.3rem;
+      display: flex; align-items: center; gap: 0.3rem;
+    }
+    .sc-change.up { color: var(--emerald); }
+    .sc-change.down { color: var(--coral); }
+
+    /* ── GRID LAYOUT ── */
+    .grid-2-1 {
+      display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .grid-1-1 {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .full-width { grid-column: 1 / -1; }
+
+    /* ── CARD ── */
+    .card {
+      background: var(--bg3); border: 1px solid var(--border);
+      border-radius: var(--card-radius); padding: 1.8rem;
+      position: relative; overflow: hidden;
+      transition: border-color var(--transition);
+    }
+    .card:hover { border-color: rgba(255,255,255,0.12); }
+
+    .card-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 1.2rem;
+    }
+
+    .card-title {
+      font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.05rem;
+      letter-spacing: -0.01em; display: flex; align-items: center; gap: 0.5rem;
+    }
+    .card-title-icon {
+      width: 28px; height: 28px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.85rem;
+    }
+
+    .card-subtitle {
+      font-size: 0.78rem; color: var(--muted); font-weight: 400;
+    }
+
+    /* Time range pills inside cards */
+    .range-pills { display: flex; gap: 0.4rem; }
+    .range-pill {
+      padding: 0.25rem 0.7rem; border-radius: 100px; font-size: 0.72rem;
+      border: 1px solid var(--border); background: transparent;
+      color: var(--muted); cursor: pointer; font-family: 'DM Sans', sans-serif;
+      font-weight: 600; transition: all 0.2s;
+    }
+    .range-pill.active {
+      background: var(--gold); color: var(--bg);
+      border-color: var(--gold); font-weight: 700;
+    }
+
+    /* ── RISK ANALYSIS LIST ── */
+    .risk-list { display: flex; flex-direction: column; gap: 0.6rem; }
+
+    .risk-item {
+      display: flex; align-items: center; gap: 1rem;
+      padding: 0.9rem 1rem; border-radius: 14px;
+      background: rgba(255,255,255,0.02); border: 1px solid var(--border);
+      transition: background var(--transition), border-color var(--transition);
+    }
+    .risk-item:hover {
+      background: rgba(255,255,255,0.04);
+      border-color: rgba(255,255,255,0.12);
+    }
+
+    .risk-icon {
+      width: 36px; height: 36px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .risk-icon svg { width: 18px; height: 18px; }
+
+    .risk-icon.low { background: rgba(56,191,255,0.12); }
+    .risk-icon.low svg { fill: var(--sky); }
+
+    .risk-icon.mid { background: rgba(245,200,66,0.12); }
+    .risk-icon.mid svg { fill: var(--gold); }
+
+    .risk-icon.high { background: rgba(255,107,107,0.12); }
+    .risk-icon.high svg { fill: var(--coral); }
+
+    .risk-info { flex: 1; }
+    .risk-name { font-weight: 600; font-size: 0.9rem; }
+    .risk-price { font-size: 0.78rem; color: var(--muted); margin-top: 0.15rem; }
+
+    .risk-badge {
+      padding: 0.25rem 0.7rem; border-radius: 100px;
+      font-size: 0.7rem; font-weight: 700; letter-spacing: 0.04em;
+      text-transform: uppercase; flex-shrink: 0;
+    }
+    .risk-badge.low { background: rgba(56,191,255,0.15); color: var(--sky); }
+    .risk-badge.mid { background: rgba(245,200,66,0.15); color: var(--gold); }
+    .risk-badge.high { background: rgba(255,107,107,0.15); color: var(--coral); }
+
+    .risk-bar-wrap { width: 80px; flex-shrink: 0; }
+    .risk-bar-bg {
+      height: 5px; border-radius: 100px;
+      background: rgba(255,255,255,0.06);
+      overflow: hidden;
+    }
+    .risk-bar-fill { height: 100%; border-radius: 100px; transition: width 1s ease; }
+    .risk-bar-fill.low { background: var(--sky); width: 30%; }
+    .risk-bar-fill.mid { background: var(--gold); width: 60%; }
+    .risk-bar-fill.high { background: var(--coral); width: 85%; }
+
+    /* ── SECTOR CARD ── */
+    .sector-legend { margin-top: 1rem; display: flex; flex-direction: column; gap: 0.5rem; }
+    .sector-legend-item {
+      display: flex; align-items: center; gap: 0.6rem;
+      font-size: 0.82rem; color: var(--muted);
+    }
+    .sector-legend-dot {
+      width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0;
+    }
+    .sector-legend-val { margin-left: auto; font-weight: 600; color: var(--text); }
+
+    /* ── PERFORMANCE TABLE ── */
+    .perf-table { width: 100%; border-collapse: collapse; }
+    .perf-table th {
+      text-align: left; font-size: 0.72rem; font-weight: 700;
+      color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em;
+      padding: 0.8rem 1rem; border-bottom: 1px solid var(--border);
+    }
+    .perf-table td {
+      padding: 0.9rem 1rem; font-size: 0.88rem; border-bottom: 1px solid var(--border);
+    }
+    .perf-table tbody tr { transition: background 0.2s; }
+    .perf-table tbody tr:hover { background: rgba(255,255,255,0.02); }
+    .perf-table tbody tr:last-child td { border-bottom: none; }
+
+    .perf-name { display: flex; align-items: center; gap: 0.6rem; font-weight: 600; }
+    .perf-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .perf-change { font-weight: 600; }
+    .perf-change.up { color: var(--emerald); }
+    .perf-change.down { color: var(--coral); }
+
+    /* ── MARKET INSIGHTS ── */
+    .insight-list { display: flex; flex-direction: column; gap: 0.8rem; }
+    .insight-item {
+      padding: 1rem 1.2rem; border-radius: 14px;
+      border: 1px solid var(--border); background: rgba(255,255,255,0.02);
+      transition: border-color 0.2s;
+    }
+    .insight-item:hover { border-color: rgba(245,200,66,0.2); }
+    .insight-tag {
+      font-size: 0.68rem; font-weight: 700; letter-spacing: 0.08em;
+      text-transform: uppercase; margin-bottom: 0.4rem;
+      display: flex; align-items: center; gap: 0.35rem;
+    }
+    .insight-tag.bull { color: var(--emerald); }
+    .insight-tag.bear { color: var(--coral); }
+    .insight-tag.neutral { color: var(--sky); }
+    .insight-text { font-size: 0.85rem; color: var(--text); line-height: 1.5; }
+    .insight-meta { font-size: 0.72rem; color: var(--muted); margin-top: 0.4rem; }
+
+    /* ── FOOTER ── */
+    .dash-footer {
+      padding: 1.5rem 2.5rem; background: var(--bg2);
+      border-top: 1px solid var(--border);
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 0.8rem; color: var(--muted);
+    }
+    .dash-footer .logo {
+      font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1rem;
+      background: linear-gradient(90deg, var(--gold), var(--emerald));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 1024px) {
+      .grid-2-1, .grid-1-1 { grid-template-columns: 1fr; }
+      .summary-strip { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 600px) {
+      .top-nav, .tab-bar, .main { padding-left: 1.2rem; padding-right: 1.2rem; }
+      .summary-strip { grid-template-columns: 1fr; }
+      .nav-badge, .nav-time { display: none; }
+    }
+
+    /* ── CANVAS FIX ── */
+    canvas { max-height: 320px; }
+  </style>
+</head>
+
+<body>
+
+  <!-- Ambient Orbs -->
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+
+  <!-- ── TOP NAVIGATION ── -->
+  <nav class="top-nav">
+    <div class="nav-left">
+      <div class="nav-logo">InvestIQ</div>
+      <span class="nav-badge"><span class="dot"></span> Dashboard Live</span>
+    </div>
+    <div class="nav-right">
+      <span class="nav-time" id="liveTime">⏱ --:--:--</span>
+      <a href="index (1).html" class="nav-btn">← Back to Home</a>
+    </div>
+  </nav>
+
+  <!-- ── TAB BAR ── -->
+  <div class="tab-bar" id="tabBar">
+    <button class="tab active" data-tab="overview">
+      <span class="tab-icon">📊</span> Overview
+    </button>
+    <button class="tab" data-tab="performance">
+      <span class="tab-icon">📈</span> Performance
+    </button>
+    <button class="tab" data-tab="risk">
+      <span class="tab-icon">🛡️</span> Risk Analysis
+    </button>
+    <button class="tab" data-tab="sectors">
+      <span class="tab-icon">🏢</span> Sectors
+    </button>
+  </div>
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- PANEL: OVERVIEW                            -->
+  <!-- ══════════════════════════════════════════ -->
+  <div class="main">
+    <div class="panel active" id="panel-overview">
+
+      <!-- KPI Summary Cards -->
+      <div class="summary-strip">
+        <div class="summary-card" style="--sc-color: var(--gold); --sc-end: var(--gold-light);">
+          <div class="sc-label"><span class="sc-label-icon">💰</span> Portfolio Value</div>
+          <div class="sc-value">₹12.4L</div>
+          <div class="sc-change up">▲ 4.2% this month</div>
+        </div>
+        <div class="summary-card" style="--sc-color: var(--emerald); --sc-end: var(--sky);">
+          <div class="sc-label"><span class="sc-label-icon">📈</span> Today's Gain</div>
+          <div class="sc-value">+₹8,420</div>
+          <div class="sc-change up">▲ 1.8% today</div>
+        </div>
+        <div class="summary-card" style="--sc-color: var(--sky); --sc-end: var(--purple);">
+          <div class="sc-label"><span class="sc-label-icon">📋</span> Active Stocks</div>
+          <div class="sc-value">5</div>
+          <div class="sc-change up">2 outperforming</div>
+        </div>
+        <div class="summary-card" style="--sc-color: var(--coral); --sc-end: var(--gold);">
+          <div class="sc-label"><span class="sc-label-icon">⚠️</span> Risk Score</div>
+          <div class="sc-value">62/100</div>
+          <div class="sc-change down">▼ Moderate risk</div>
+        </div>
+      </div>
+
+      <!-- Row: Line Chart + Risk Panel -->
+      <div class="grid-2-1">
+        <!-- Market Trend Line Chart -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">
+                <span class="card-title-icon" style="background: var(--gold-glow);">📉</span>
+                Market Trends
+              </div>
+              <div class="card-subtitle">6-month stock price movement</div>
+            </div>
+            <div class="range-pills">
+              <button class="range-pill">1M</button>
+              <button class="range-pill">3M</button>
+              <button class="range-pill active">6M</button>
+              <button class="range-pill">1Y</button>
+            </div>
+          </div>
+          <canvas id="lineChart"></canvas>
+        </div>
+
+        <!-- Risk Analysis Panel -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">
+                <span class="card-title-icon" style="background: rgba(255,107,107,0.12);">🛡️</span>
+                Risk Analysis
+              </div>
+              <div class="card-subtitle">Per-stock risk indicator</div>
+            </div>
+          </div>
+          <div class="risk-list">
+            <!-- TCS -->
+            <div class="risk-item">
+              <div class="risk-icon mid">
+                <svg viewBox="0 0 24 24"><path d="M12 2L3 7v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-9-5zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12.99H5V8.26l7-3.89v8.62z"/></svg>
+              </div>
+              <div class="risk-info">
+                <div class="risk-name">TCS</div>
+                <div class="risk-price">₹3,642.50</div>
+              </div>
+              <div class="risk-bar-wrap"><div class="risk-bar-bg"><div class="risk-bar-fill mid"></div></div></div>
+              <span class="risk-badge mid">Moderate</span>
+            </div>
+            <!-- Infosys -->
+            <div class="risk-item">
+              <div class="risk-icon low">
+                <svg viewBox="0 0 24 24"><path d="M12 2L3 7v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-9-5zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12.99H5V8.26l7-3.89v8.62z"/></svg>
+              </div>
+              <div class="risk-info">
+                <div class="risk-name">Infosys</div>
+                <div class="risk-price">₹1,612.30</div>
+              </div>
+              <div class="risk-bar-wrap"><div class="risk-bar-bg"><div class="risk-bar-fill low"></div></div></div>
+              <span class="risk-badge low">Low</span>
+            </div>
+            <!-- Wipro -->
+            <div class="risk-item">
+              <div class="risk-icon high">
+                <svg viewBox="0 0 24 24"><path d="M12 2L3 7v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-9-5zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12.99H5V8.26l7-3.89v8.62z"/></svg>
+              </div>
+              <div class="risk-info">
+                <div class="risk-name">Wipro</div>
+                <div class="risk-price">₹456.80</div>
+              </div>
+              <div class="risk-bar-wrap"><div class="risk-bar-bg"><div class="risk-bar-fill high"></div></div></div>
+              <span class="risk-badge high">High</span>
+            </div>
+            <!-- HCL Tech -->
+            <div class="risk-item">
+              <div class="risk-icon mid">
+                <svg viewBox="0 0 24 24"><path d="M12 2L3 7v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-9-5zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12.99H5V8.26l7-3.89v8.62z"/></svg>
+              </div>
+              <div class="risk-info">
+                <div class="risk-name">HCL Tech</div>
+                <div class="risk-price">₹1,228.15</div>
+              </div>
+              <div class="risk-bar-wrap"><div class="risk-bar-bg"><div class="risk-bar-fill mid"></div></div></div>
+              <span class="risk-badge mid">Moderate</span>
+            </div>
+            <!-- Tech Mahindra -->
+            <div class="risk-item">
+              <div class="risk-icon high">
+                <svg viewBox="0 0 24 24"><path d="M12 2L3 7v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-9-5zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12.99H5V8.26l7-3.89v8.62z"/></svg>
+              </div>
+              <div class="risk-info">
+                <div class="risk-name">Tech Mahindra</div>
+                <div class="risk-price">₹1,345.90</div>
+              </div>
+              <div class="risk-bar-wrap"><div class="risk-bar-bg"><div class="risk-bar-fill high"></div></div></div>
+              <span class="risk-badge high">High</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Full-width Bar Chart -->
+      <div class="card full-width">
+        <div class="card-header">
+          <div>
+            <div class="card-title">
+              <span class="card-title-icon" style="background: rgba(0,217,126,0.12);">📊</span>
+              Stock Comparison
+            </div>
+            <div class="card-subtitle">Current stock prices comparison across IT sector</div>
+          </div>
+        </div>
+        <canvas id="barChart"></canvas>
+      </div>
+
+    </div>
+
+    <!-- ══════════════════════════════════════════ -->
+    <!-- PANEL: PERFORMANCE                         -->
+    <!-- ══════════════════════════════════════════ -->
+    <div class="panel" id="panel-performance">
+      <div class="grid-2-1">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">
+                <span class="card-title-icon" style="background: var(--gold-glow);">📈</span>
+                Performance Overview
+              </div>
+              <div class="card-subtitle">Year-to-date performance for tracked stocks</div>
+            </div>
+          </div>
+          <canvas id="perfLineChart"></canvas>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">
+                <span class="card-title-icon" style="background: rgba(0,217,126,0.12);">💡</span>
+                Market Insights
+              </div>
+              <div class="card-subtitle">AI-generated analysis</div>
+            </div>
+          </div>
+          <div class="insight-list">
+            <div class="insight-item">
+              <div class="insight-tag bull">● Bullish</div>
+              <div class="insight-text">TCS showing strong upward momentum with consistent quarterly earnings beats.</div>
+              <div class="insight-meta">Updated 2h ago · Confidence: 87%</div>
+            </div>
+            <div class="insight-item">
+              <div class="insight-tag bear">● Bearish</div>
+              <div class="insight-text">Wipro faces headwinds from reduced IT spending in European markets.</div>
+              <div class="insight-meta">Updated 4h ago · Confidence: 72%</div>
+            </div>
+            <div class="insight-item">
+              <div class="insight-tag neutral">● Neutral</div>
+              <div class="insight-text">HCL Tech consolidating near support levels. Watch for breakout above ₹1,260.</div>
+              <div class="insight-meta">Updated 1h ago · Confidence: 65%</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stock Performance Table -->
+      <div class="card full-width">
+        <div class="card-header">
+          <div>
+            <div class="card-title">
+              <span class="card-title-icon" style="background: rgba(56,191,255,0.12);">📋</span>
+              Detailed Performance
+            </div>
+            <div class="card-subtitle">Comprehensive stock metrics</div>
+          </div>
+        </div>
+        <table class="perf-table">
+          <thead>
+            <tr>
+              <th>Stock</th>
+              <th>Price</th>
+              <th>1D Change</th>
+              <th>1W Change</th>
+              <th>1M Change</th>
+              <th>Volume</th>
+              <th>Market Cap</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="perf-name"><span class="perf-dot" style="background: var(--gold);"></span> TCS</span></td>
+              <td>₹3,642.50</td>
+              <td class="perf-change up">+1.4%</td>
+              <td class="perf-change up">+3.2%</td>
+              <td class="perf-change up">+5.8%</td>
+              <td>2.3M</td>
+              <td>₹13.2L Cr</td>
+            </tr>
+            <tr>
+              <td><span class="perf-name"><span class="perf-dot" style="background: var(--emerald);"></span> Infosys</span></td>
+              <td>₹1,612.30</td>
+              <td class="perf-change up">+0.9%</td>
+              <td class="perf-change up">+2.1%</td>
+              <td class="perf-change up">+4.3%</td>
+              <td>5.1M</td>
+              <td>₹6.7L Cr</td>
+            </tr>
+            <tr>
+              <td><span class="perf-name"><span class="perf-dot" style="background: var(--coral);"></span> Wipro</span></td>
+              <td>₹456.80</td>
+              <td class="perf-change down">-0.6%</td>
+              <td class="perf-change down">-1.8%</td>
+              <td class="perf-change down">-3.2%</td>
+              <td>4.8M</td>
+              <td>₹2.5L Cr</td>
+            </tr>
+            <tr>
+              <td><span class="perf-name"><span class="perf-dot" style="background: var(--sky);"></span> HCL Tech</span></td>
+              <td>₹1,228.15</td>
+              <td class="perf-change up">+0.3%</td>
+              <td class="perf-change down">-0.5%</td>
+              <td class="perf-change up">+2.1%</td>
+              <td>1.9M</td>
+              <td>₹3.3L Cr</td>
+            </tr>
+            <tr>
+              <td><span class="perf-name"><span class="perf-dot" style="background: var(--purple);"></span> Tech Mahindra</span></td>
+              <td>₹1,345.90</td>
+              <td class="perf-change down">-1.2%</td>
+              <td class="perf-change down">-2.4%</td>
+              <td class="perf-change down">-4.1%</td>
+              <td>3.2M</td>
+              <td>₹1.3L Cr</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════ -->
+    <!-- PANEL: RISK ANALYSIS                       -->
+    <!-- ══════════════════════════════════════════ -->
+    <div class="panel" id="panel-risk">
+      <div class="summary-strip" style="grid-template-columns: repeat(3,1fr);">
+        <div class="summary-card" style="--sc-color: var(--sky); --sc-end: var(--emerald);">
+          <div class="sc-label"><span class="sc-label-icon">🟢</span> Low Risk</div>
+          <div class="sc-value">1 Stock</div>
+          <div class="sc-change up">Infosys</div>
+        </div>
+        <div class="summary-card" style="--sc-color: var(--gold); --sc-end: var(--gold-light);">
+          <div class="sc-label"><span class="sc-label-icon">🟡</span> Moderate Risk</div>
+          <div class="sc-value">2 Stocks</div>
+          <div class="sc-change down">TCS, HCL Tech</div>
+        </div>
+        <div class="summary-card" style="--sc-color: var(--coral); --sc-end: #FF9999;">
+          <div class="sc-label"><span class="sc-label-icon">🔴</span> High Risk</div>
+          <div class="sc-value">2 Stocks</div>
+          <div class="sc-change down">Wipro, Tech Mahindra</div>
+        </div>
+      </div>
+
+      <div class="grid-1-1">
+        <!-- Risk Radar Chart -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">
+                <span class="card-title-icon" style="background: rgba(255,107,107,0.12);">🎯</span>
+                Risk Radar
+              </div>
+              <div class="card-subtitle">Volatility, Beta & Drawdown metrics</div>
+            </div>
+          </div>
+          <canvas id="riskRadar"></canvas>
+        </div>
+
+        <!-- Risk Heatmap (bar-based) -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">
+                <span class="card-title-icon" style="background: rgba(245,200,66,0.12);">🔥</span>
+                Volatility Index
+              </div>
+              <div class="card-subtitle">30-day rolling volatility</div>
+            </div>
+          </div>
+          <canvas id="volatilityBar"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════ -->
+    <!-- PANEL: SECTORS                             -->
+    <!-- ══════════════════════════════════════════ -->
+    <div class="panel" id="panel-sectors">
+      <div class="grid-1-1">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">
+                <span class="card-title-icon" style="background: rgba(167,139,250,0.12);">🏢</span>
+                Sector Allocation
+              </div>
+              <div class="card-subtitle">Portfolio distribution by sector</div>
+            </div>
+          </div>
+          <div style="max-width: 280px; margin: 0 auto;">
+            <canvas id="sectorDonut"></canvas>
+          </div>
+          <div class="sector-legend">
+            <div class="sector-legend-item"><span class="sector-legend-dot" style="background: var(--gold);"></span> IT Services <span class="sector-legend-val">45%</span></div>
+            <div class="sector-legend-item"><span class="sector-legend-dot" style="background: var(--emerald);"></span> Cloud & SaaS <span class="sector-legend-val">25%</span></div>
+            <div class="sector-legend-item"><span class="sector-legend-dot" style="background: var(--sky);"></span> Consulting <span class="sector-legend-val">18%</span></div>
+            <div class="sector-legend-item"><span class="sector-legend-dot" style="background: var(--purple);"></span> Product Eng. <span class="sector-legend-val">12%</span></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">
+                <span class="card-title-icon" style="background: rgba(0,217,126,0.12);">📊</span>
+                Sector Performance
+              </div>
+              <div class="card-subtitle">Revenue growth by segment</div>
+            </div>
+          </div>
+          <canvas id="sectorBar"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── FOOTER ── -->
+  <footer class="dash-footer">
+    <span class="logo">InvestIQ</span>
+    <span>Data is simulated for demonstration purposes. Not financial advice.</span>
+    <span>© 2026 InvestIQ</span>
+  </footer>
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- SCRIPTS                                     -->
+  <!-- ══════════════════════════════════════════ -->
+  <script>
+    // ── CHART DEFAULTS ──
+    Chart.defaults.color = '#7A8BA0';
+    Chart.defaults.borderColor = 'rgba(255,255,255,0.06)';
+    Chart.defaults.font.family = "'DM Sans', sans-serif";
+
+    // ── TAB LOGIC ──
+    const tabs = document.querySelectorAll('.tab');
+    const panels = document.querySelectorAll('.panel');
+    let chartsInitialized = {};
+
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        tabs.forEach(t => t.classList.remove('active'));
+        panels.forEach(p => p.classList.remove('active'));
+        tab.classList.add('active');
+        const target = tab.dataset.tab;
+        document.getElementById('panel-' + target).classList.add('active');
+
+        // Lazy-init charts when tab is first shown
+        if (target === 'performance' && !chartsInitialized.performance) { initPerfCharts(); chartsInitialized.performance = true; }
+        if (target === 'risk' && !chartsInitialized.risk) { initRiskCharts(); chartsInitialized.risk = true; }
+        if (target === 'sectors' && !chartsInitialized.sectors) { initSectorCharts(); chartsInitialized.sectors = true; }
+      });
+    });
+
+    // Range pill toggling
+    document.querySelectorAll('.range-pills').forEach(wrap => {
+      wrap.querySelectorAll('.range-pill').forEach(pill => {
+        pill.addEventListener('click', () => {
+          wrap.querySelectorAll('.range-pill').forEach(p => p.classList.remove('active'));
+          pill.classList.add('active');
+        });
+      });
+    });
+
+    // Live time
+    function updateTime() {
+      const now = new Date();
+      document.getElementById('liveTime').textContent = '⏱ ' + now.toLocaleTimeString('en-IN', { hour12: true });
+    }
+    updateTime();
+    setInterval(updateTime, 1000);
+
+    // ── OVERVIEW CHARTS ──
+
+    // Line Chart — Market Trends
+    new Chart(document.getElementById('lineChart'), {
+      type: 'line',
+      data: {
+        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+        datasets: [
+          {
+            label: 'TCS', data: [3200, 3300, 3250, 3400, 3500, 3642],
+            borderColor: '#F5C842', backgroundColor: 'rgba(245,200,66,0.08)',
+            fill: true, tension: 0.4, borderWidth: 2.5, pointRadius: 3,
+            pointBackgroundColor: '#F5C842', pointBorderWidth: 0
+          },
+          {
+            label: 'Infosys', data: [1400, 1450, 1500, 1480, 1550, 1612],
+            borderColor: '#00D97E', backgroundColor: 'rgba(0,217,126,0.06)',
+            fill: true, tension: 0.4, borderWidth: 2.5, pointRadius: 3,
+            pointBackgroundColor: '#00D97E', pointBorderWidth: 0
+          },
+          {
+            label: 'Wipro', data: [500, 490, 475, 468, 460, 457],
+            borderColor: '#FF6B6B', backgroundColor: 'rgba(255,107,107,0.05)',
+            fill: true, tension: 0.4, borderWidth: 2, pointRadius: 2,
+            pointBackgroundColor: '#FF6B6B', pointBorderWidth: 0
+          },
+          {
+            label: 'HCL Tech', data: [1150, 1180, 1200, 1190, 1210, 1228],
+            borderColor: '#38BFFF', backgroundColor: 'rgba(56,191,255,0.05)',
+            fill: true, tension: 0.4, borderWidth: 2, pointRadius: 2,
+            pointBackgroundColor: '#38BFFF', pointBorderWidth: 0
+          },
+          {
+            label: 'Tech Mahindra', data: [1400, 1380, 1370, 1360, 1350, 1346],
+            borderColor: '#A78BFA', backgroundColor: 'rgba(167,139,250,0.05)',
+            fill: true, tension: 0.4, borderWidth: 2, pointRadius: 2,
+            pointBackgroundColor: '#A78BFA', pointBorderWidth: 0
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        interaction: { intersect: false, mode: 'index' },
+        plugins: {
+          legend: {
+            position: 'bottom', labels: { usePointStyle: true, pointStyle: 'circle', padding: 20, font: { size: 11 } }
+          },
+          tooltip: {
+            backgroundColor: '#111927', borderColor: 'rgba(245,200,66,0.3)', borderWidth: 1,
+            titleColor: '#EEF2FF', bodyColor: '#7A8BA0',
+            padding: 12, cornerRadius: 12, displayColors: true
+          }
+        },
+        scales: {
+          y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { callback: v => '₹' + v } },
+          x: { grid: { display: false } }
+        }
+      }
+    });
+
+    // Bar Chart — Stock Comparison
+    new Chart(document.getElementById('barChart'), {
+      type: 'bar',
+      data: {
+        labels: ['TCS', 'Infosys', 'Wipro', 'HCL Tech', 'Tech Mahindra'],
+        datasets: [{
+          label: 'Stock Price (₹)',
+          data: [3642, 1612, 457, 1228, 1346],
+          backgroundColor: [
+            'rgba(245,200,66,0.7)', 'rgba(0,217,126,0.7)',
+            'rgba(255,107,107,0.7)', 'rgba(56,191,255,0.7)', 'rgba(167,139,250,0.7)'
+          ],
+          borderColor: ['#F5C842', '#00D97E', '#FF6B6B', '#38BFFF', '#A78BFA'],
+          borderWidth: 2, borderRadius: 8, borderSkipped: false
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#111927', borderColor: 'rgba(245,200,66,0.3)', borderWidth: 1,
+            padding: 12, cornerRadius: 12,
+            callbacks: { label: ctx => '₹' + ctx.parsed.y.toLocaleString() }
+          }
+        },
+        scales: {
+          y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { callback: v => '₹' + v } },
+          x: { grid: { display: false } }
+        }
+      }
+    });
+
+    // ── PERFORMANCE CHARTS (lazy) ──
+    function initPerfCharts() {
+      new Chart(document.getElementById('perfLineChart'), {
+        type: 'line',
+        data: {
+          labels: ['Q1', 'Q2', 'Q3', 'Q4'],
+          datasets: [
+            { label: 'TCS', data: [8.2, 10.4, 12.1, 15.3], borderColor: '#F5C842', tension: 0.4, borderWidth: 2.5, pointRadius: 4, pointBackgroundColor: '#F5C842' },
+            { label: 'Infosys', data: [6.1, 8.3, 7.9, 11.2], borderColor: '#00D97E', tension: 0.4, borderWidth: 2.5, pointRadius: 4, pointBackgroundColor: '#00D97E' },
+            { label: 'Wipro', data: [2.3, 1.8, -0.5, -2.1], borderColor: '#FF6B6B', tension: 0.4, borderWidth: 2, pointRadius: 3, pointBackgroundColor: '#FF6B6B' },
+            { label: 'HCL Tech', data: [4.5, 5.2, 6.8, 7.1], borderColor: '#38BFFF', tension: 0.4, borderWidth: 2, pointRadius: 3, pointBackgroundColor: '#38BFFF' },
+            { label: 'Tech Mahindra', data: [3.1, 1.5, -1.2, -3.8], borderColor: '#A78BFA', tension: 0.4, borderWidth: 2, pointRadius: 3, pointBackgroundColor: '#A78BFA' }
+          ]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { position: 'bottom', labels: { usePointStyle: true, pointStyle: 'circle', padding: 18, font: { size: 11 } } },
+            tooltip: { backgroundColor: '#111927', borderColor: 'rgba(245,200,66,0.3)', borderWidth: 1, padding: 12, cornerRadius: 12, callbacks: { label: ctx => ctx.dataset.label + ': ' + ctx.parsed.y + '% return' } }
+          },
+          scales: {
+            y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { callback: v => v + '%' } },
+            x: { grid: { display: false } }
+          }
+        }
+      });
+    }
+
+    // ── RISK CHARTS (lazy) ──
+    function initRiskCharts() {
+      new Chart(document.getElementById('riskRadar'), {
+        type: 'radar',
+        data: {
+          labels: ['Volatility', 'Beta', 'Max Drawdown', 'Sharpe Ratio', 'VaR'],
+          datasets: [
+            { label: 'TCS', data: [40, 55, 30, 80, 45], borderColor: '#F5C842', backgroundColor: 'rgba(245,200,66,0.1)', pointBackgroundColor: '#F5C842', borderWidth: 2 },
+            { label: 'Infosys', data: [25, 40, 20, 85, 30], borderColor: '#00D97E', backgroundColor: 'rgba(0,217,126,0.1)', pointBackgroundColor: '#00D97E', borderWidth: 2 },
+            { label: 'Wipro', data: [75, 80, 70, 30, 80], borderColor: '#FF6B6B', backgroundColor: 'rgba(255,107,107,0.1)', pointBackgroundColor: '#FF6B6B', borderWidth: 2 }
+          ]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, pointStyle: 'circle', padding: 18, font: { size: 11 } } } },
+          scales: {
+            r: {
+              angleLines: { color: 'rgba(255,255,255,0.06)' },
+              grid: { color: 'rgba(255,255,255,0.06)' },
+              pointLabels: { color: '#7A8BA0', font: { size: 11 } },
+              ticks: { display: false }, suggestedMin: 0, suggestedMax: 100
+            }
+          }
+        }
+      });
+
+      new Chart(document.getElementById('volatilityBar'), {
+        type: 'bar',
+        data: {
+          labels: ['TCS', 'Infosys', 'Wipro', 'HCL Tech', 'Tech Mahindra'],
+          datasets: [{
+            label: 'Volatility %',
+            data: [18.2, 12.5, 32.8, 15.4, 28.6],
+            backgroundColor: ['rgba(245,200,66,0.6)', 'rgba(0,217,126,0.6)', 'rgba(255,107,107,0.6)', 'rgba(56,191,255,0.6)', 'rgba(167,139,250,0.6)'],
+            borderColor: ['#F5C842', '#00D97E', '#FF6B6B', '#38BFFF', '#A78BFA'],
+            borderWidth: 2, borderRadius: 8, borderSkipped: false
+          }]
+        },
+        options: {
+          indexAxis: 'y', responsive: true,
+          plugins: {
+            legend: { display: false },
+            tooltip: { backgroundColor: '#111927', borderColor: 'rgba(245,200,66,0.3)', borderWidth: 1, padding: 12, cornerRadius: 12, callbacks: { label: ctx => ctx.parsed.x + '% volatility' } }
+          },
+          scales: {
+            x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { callback: v => v + '%' } },
+            y: { grid: { display: false } }
+          }
+        }
+      });
+    }
+
+    // ── SECTOR CHARTS (lazy) ──
+    function initSectorCharts() {
+      new Chart(document.getElementById('sectorDonut'), {
+        type: 'doughnut',
+        data: {
+          labels: ['IT Services', 'Cloud & SaaS', 'Consulting', 'Product Eng.'],
+          datasets: [{
+            data: [45, 25, 18, 12],
+            backgroundColor: ['#F5C842', '#00D97E', '#38BFFF', '#A78BFA'],
+            borderColor: '#111927', borderWidth: 3, hoverOffset: 8
+          }]
+        },
+        options: {
+          responsive: true, cutout: '65%',
+          plugins: {
+            legend: { display: false },
+            tooltip: { backgroundColor: '#111927', borderColor: 'rgba(245,200,66,0.3)', borderWidth: 1, padding: 12, cornerRadius: 12, callbacks: { label: ctx => ctx.label + ': ' + ctx.parsed + '%' } }
+          }
+        }
+      });
+
+      new Chart(document.getElementById('sectorBar'), {
+        type: 'bar',
+        data: {
+          labels: ['IT Services', 'Cloud & SaaS', 'Consulting', 'Product Eng.'],
+          datasets: [
+            { label: 'Q3 2025', data: [12.4, 18.2, 8.1, 14.7], backgroundColor: 'rgba(245,200,66,0.4)', borderColor: '#F5C842', borderWidth: 1, borderRadius: 6 },
+            { label: 'Q4 2025', data: [15.1, 22.5, 9.8, 16.3], backgroundColor: 'rgba(0,217,126,0.4)', borderColor: '#00D97E', borderWidth: 1, borderRadius: 6 }
+          ]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { position: 'bottom', labels: { usePointStyle: true, pointStyle: 'circle', padding: 18, font: { size: 11 } } },
+            tooltip: { backgroundColor: '#111927', borderColor: 'rgba(245,200,66,0.3)', borderWidth: 1, padding: 12, cornerRadius: 12, callbacks: { label: ctx => ctx.dataset.label + ': ' + ctx.parsed.y + '% growth' } }
+          },
+          scales: {
+            y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { callback: v => v + '%' } },
+            x: { grid: { display: false } }
+          }
+        }
+      });
+    }
+  </script>
+
+</body>
+</html>
