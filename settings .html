@@ -1,0 +1,1207 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>InvestIQ — Settings</title>
+  <meta name="description" content="InvestIQ Settings — Manage your profile, account, privacy and notification preferences.">
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300&display=swap" rel="stylesheet">
+
+  <style>
+    /* ── DESIGN TOKENS ── */
+    :root {
+      --gold: #F5C842;
+      --gold-light: #FFE580;
+      --gold-dark: #C88A00;
+      --emerald: #00D97E;
+      --sky: #38BFFF;
+      --coral: #FF6B6B;
+      --purple: #A78BFA;
+      --bg: #060A12;
+      --bg2: #0C1220;
+      --bg3: #111927;
+      --bg4: #162032;
+      --text: #EEF2FF;
+      --muted: #7A8BA0;
+      --border: rgba(255, 255, 255, 0.07);
+      --gold-glow: rgba(245, 200, 66, 0.12);
+      --card-radius: 20px;
+      --transition: 0.3s cubic-bezier(.4, 0, .2, 1);
+      --sidebar-width: 280px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      overflow-x: hidden;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── NOISE OVERLAY ── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none; z-index: 9999; opacity: 0.3;
+    }
+
+    /* ── AMBIENT ORBS ── */
+    .orb {
+      position: fixed; border-radius: 50%; filter: blur(100px); opacity: 0.10;
+      animation: drift 14s ease-in-out infinite alternate; pointer-events: none;
+    }
+    .orb-1 { width: 500px; height: 500px; background: var(--gold); top: -120px; left: -80px; }
+    .orb-2 { width: 400px; height: 400px; background: var(--emerald); bottom: -80px; right: -60px; animation-delay: -5s; }
+    .orb-3 { width: 300px; height: 300px; background: var(--sky); top: 50%; left: 60%; animation-delay: -9s; }
+
+    @keyframes drift {
+      from { transform: translate(0, 0) scale(1); }
+      to   { transform: translate(30px, 20px) scale(1.08); }
+    }
+
+    /* ── TOP NAVIGATION BAR ── */
+    .top-nav {
+      position: sticky; top: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0.9rem 2rem;
+      background: rgba(12, 18, 32, 0.85);
+      backdrop-filter: blur(24px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-left { display: flex; align-items: center; gap: 1.5rem; }
+
+    .nav-logo {
+      font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.35rem;
+      background: linear-gradient(90deg, var(--gold), var(--emerald));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      letter-spacing: -0.03em; text-decoration: none;
+    }
+
+    .nav-page-title {
+      color: var(--muted); font-size: 0.88rem; font-weight: 500;
+      display: flex; align-items: center; gap: 0.5rem;
+    }
+    .nav-page-title .separator { color: rgba(255,255,255,0.2); }
+
+    /* Search Bar */
+    .nav-search {
+      flex: 1; max-width: 420px; margin: 0 2rem; position: relative;
+    }
+    .nav-search input {
+      width: 100%; padding: 0.6rem 1rem 0.6rem 2.6rem;
+      background: var(--bg3); border: 1px solid var(--border);
+      border-radius: 100px; color: var(--text);
+      font-family: 'DM Sans', sans-serif; font-size: 0.85rem;
+      outline: none; transition: border-color var(--transition);
+    }
+    .nav-search input::placeholder { color: var(--muted); }
+    .nav-search input:focus { border-color: rgba(245, 200, 66, 0.4); }
+    .nav-search .search-icon {
+      position: absolute; left: 0.9rem; top: 50%; transform: translateY(-50%);
+      color: var(--muted); font-size: 0.9rem; pointer-events: none;
+    }
+
+    .nav-right { display: flex; align-items: center; gap: 1rem; }
+    .nav-btn {
+      background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+      color: var(--bg); border: none; border-radius: 100px;
+      padding: 0.5rem 1.3rem; font-family: 'DM Sans', sans-serif;
+      font-weight: 700; font-size: 0.82rem; cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s; text-decoration: none;
+    }
+    .nav-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(245,200,66,0.35);
+    }
+
+    /* ── LAYOUT ── */
+    .settings-layout {
+      display: flex; flex: 1; min-height: calc(100vh - 56px);
+    }
+
+    /* ── LEFT SIDEBAR ── */
+    .sidebar {
+      width: var(--sidebar-width); min-height: 100%;
+      background: var(--bg2);
+      border-right: 1px solid var(--border);
+      padding: 1.8rem 0;
+      display: flex; flex-direction: column;
+      position: sticky; top: 56px; height: calc(100vh - 56px);
+      overflow-y: auto;
+    }
+
+    /* User Profile Card in Sidebar */
+    .sidebar-profile {
+      padding: 0 1.4rem 1.5rem; margin-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .sidebar-profile-inner {
+      display: flex; align-items: center; gap: 0.9rem;
+      padding: 1rem;
+      background: var(--bg3); border: 1px solid var(--border);
+      border-radius: 16px;
+      cursor: pointer;
+      transition: border-color var(--transition), background var(--transition);
+    }
+    .sidebar-profile-inner:hover {
+      border-color: rgba(245,200,66,0.25);
+      background: var(--bg4);
+    }
+    .sidebar-avatar {
+      width: 44px; height: 44px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--gold), var(--emerald));
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.1rem;
+      color: var(--bg); flex-shrink: 0;
+    }
+    .sidebar-user-info { overflow: hidden; }
+    .sidebar-username {
+      font-weight: 600; font-size: 0.92rem; white-space: nowrap;
+      overflow: hidden; text-overflow: ellipsis;
+    }
+    .sidebar-email {
+      font-size: 0.76rem; color: var(--muted); margin-top: 0.1rem;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+
+    /* Sidebar Section Labels */
+    .sidebar-section-label {
+      padding: 0.6rem 1.6rem 0.4rem;
+      font-size: 0.68rem; font-weight: 700;
+      color: var(--muted); text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    /* Sidebar Menu Items */
+    .sidebar-menu { display: flex; flex-direction: column; gap: 2px; padding: 0 0.8rem; }
+
+    .sidebar-item {
+      display: flex; align-items: center; gap: 0.8rem;
+      padding: 0.7rem 0.9rem; border-radius: 12px;
+      color: var(--muted); text-decoration: none;
+      font-size: 0.88rem; font-weight: 500;
+      transition: all var(--transition); cursor: pointer;
+      border: 1px solid transparent;
+    }
+    .sidebar-item:hover {
+      background: rgba(255,255,255,0.04);
+      color: var(--text);
+    }
+    .sidebar-item.active {
+      background: var(--gold-glow);
+      color: var(--gold);
+      border-color: rgba(245,200,66,0.15);
+      font-weight: 600;
+    }
+    .sidebar-item-icon {
+      width: 32px; height: 32px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.95rem; flex-shrink: 0;
+      background: rgba(255,255,255,0.04);
+    }
+    .sidebar-item.active .sidebar-item-icon {
+      background: rgba(245,200,66,0.15);
+    }
+
+    /* Sidebar Footer */
+    .sidebar-footer {
+      margin-top: auto; padding: 1.2rem 1.4rem 0;
+      border-top: 1px solid var(--border);
+    }
+    .sidebar-footer-btn {
+      display: flex; align-items: center; gap: 0.7rem;
+      padding: 0.7rem 0.9rem; border-radius: 12px;
+      color: var(--coral); font-size: 0.88rem; font-weight: 500;
+      cursor: pointer; transition: background var(--transition);
+      border: none; background: none; width: 100; text-align: left;
+      font-family: 'DM Sans', sans-serif;
+    }
+    .sidebar-footer-btn:hover {
+      background: rgba(255,107,107,0.08);
+    }
+
+    /* ── MAIN CONTENT AREA ── */
+    .settings-main {
+      flex: 1; padding: 2rem 2.5rem 3rem;
+      max-width: 900px; overflow-y: auto;
+    }
+
+    .settings-panel { display: none; animation: fadeUp 0.4s ease both; }
+    .settings-panel.active { display: block; }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Panel Header */
+    .panel-header {
+      margin-bottom: 1.8rem;
+    }
+    .panel-title {
+      font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.6rem;
+      letter-spacing: -0.02em;
+      display: flex; align-items: center; gap: 0.6rem;
+    }
+    .panel-subtitle {
+      color: var(--muted); font-size: 0.9rem; margin-top: 0.4rem;
+    }
+
+    /* Card Sections */
+    .settings-card {
+      background: var(--bg3); border: 1px solid var(--border);
+      border-radius: var(--card-radius); padding: 1.8rem;
+      margin-bottom: 1.2rem; position: relative; overflow: hidden;
+      transition: border-color var(--transition);
+    }
+    .settings-card:hover { border-color: rgba(255,255,255,0.12); }
+    .settings-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, transparent, var(--card-accent, var(--gold)), transparent);
+      opacity: 0; transition: opacity 0.3s;
+    }
+    .settings-card:hover::before { opacity: 1; }
+
+    .card-section-title {
+      font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1rem;
+      margin-bottom: 1.2rem; display: flex; align-items: center; gap: 0.5rem;
+    }
+    .card-section-title .icon {
+      width: 28px; height: 28px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.85rem;
+    }
+
+    /* Form Elements */
+    .form-row {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;
+      margin-bottom: 1rem;
+    }
+    .form-row.single { grid-template-columns: 1fr; }
+
+    .form-group { display: flex; flex-direction: column; gap: 0.4rem; }
+    .form-label {
+      font-size: 0.78rem; font-weight: 600; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 0.06em;
+    }
+    .form-input {
+      padding: 0.7rem 1rem; border-radius: 12px;
+      background: var(--bg2); border: 1px solid var(--border);
+      color: var(--text); font-family: 'DM Sans', sans-serif;
+      font-size: 0.9rem; outline: none;
+      transition: border-color var(--transition);
+    }
+    .form-input:focus { border-color: rgba(245, 200, 66, 0.5); }
+    .form-input::placeholder { color: rgba(122, 139, 160, 0.6); }
+
+    select.form-input {
+      appearance: none; cursor: pointer;
+      background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%237A8BA0' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 1rem center;
+      padding-right: 2.5rem;
+    }
+
+    textarea.form-input {
+      resize: vertical; min-height: 90px; border-radius: 14px;
+    }
+
+    /* Avatar Upload */
+    .avatar-upload {
+      display: flex; align-items: center; gap: 1.2rem; margin-bottom: 1.4rem;
+    }
+    .avatar-preview {
+      width: 72px; height: 72px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--gold), var(--emerald));
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.6rem;
+      color: var(--bg); flex-shrink: 0;
+      border: 3px solid rgba(245, 200, 66, 0.25);
+    }
+    .avatar-actions { display: flex; flex-direction: column; gap: 0.5rem; }
+    .avatar-actions .upload-label {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      padding: 0.45rem 1rem; border-radius: 100px;
+      font-size: 0.78rem; font-weight: 600; cursor: pointer;
+      background: var(--gold-glow); color: var(--gold);
+      border: 1px solid rgba(245, 200, 66, 0.2);
+      transition: background var(--transition);
+    }
+    .avatar-actions .upload-label:hover {
+      background: rgba(245, 200, 66, 0.2);
+    }
+    .avatar-actions .upload-hint {
+      font-size: 0.72rem; color: var(--muted);
+    }
+    .avatar-actions input[type="file"] { display: none; }
+
+    /* Buttons */
+    .btn-gold {
+      background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+      color: var(--bg); border: none; border-radius: 100px;
+      padding: 0.65rem 1.8rem; font-family: 'DM Sans', sans-serif;
+      font-weight: 700; font-size: 0.85rem; cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      display: inline-flex; align-items: center; gap: 0.4rem;
+    }
+    .btn-gold:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(245,200,66,0.35);
+    }
+
+    .btn-outline {
+      background: transparent; color: var(--text);
+      border: 1px solid var(--border); border-radius: 100px;
+      padding: 0.65rem 1.8rem; font-family: 'DM Sans', sans-serif;
+      font-weight: 500; font-size: 0.85rem; cursor: pointer;
+      transition: border-color var(--transition), background var(--transition);
+    }
+    .btn-outline:hover {
+      border-color: rgba(255,255,255,0.2);
+      background: rgba(255,255,255,0.04);
+    }
+
+    .btn-danger {
+      background: rgba(255,107,107,0.12); color: var(--coral);
+      border: 1px solid rgba(255,107,107,0.2); border-radius: 100px;
+      padding: 0.65rem 1.8rem; font-family: 'DM Sans', sans-serif;
+      font-weight: 600; font-size: 0.85rem; cursor: pointer;
+      transition: background var(--transition);
+    }
+    .btn-danger:hover {
+      background: rgba(255,107,107,0.2);
+    }
+
+    .btn-row {
+      display: flex; gap: 0.8rem; margin-top: 1.4rem; flex-wrap: wrap;
+    }
+
+    /* Toggle Switch */
+    .toggle-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0.9rem 0; border-bottom: 1px solid var(--border);
+    }
+    .toggle-row:last-child { border-bottom: none; }
+
+    .toggle-info { display: flex; flex-direction: column; gap: 0.15rem; }
+    .toggle-label { font-size: 0.9rem; font-weight: 500; }
+    .toggle-desc { font-size: 0.76rem; color: var(--muted); }
+
+    .toggle-switch {
+      position: relative; width: 46px; height: 26px; flex-shrink: 0;
+    }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider {
+      position: absolute; inset: 0; cursor: pointer;
+      background: rgba(255,255,255,0.1); border-radius: 100px;
+      transition: background var(--transition);
+    }
+    .toggle-slider::before {
+      content: ''; position: absolute;
+      width: 20px; height: 20px; border-radius: 50%;
+      background: var(--muted); left: 3px; top: 3px;
+      transition: transform var(--transition), background var(--transition);
+    }
+    .toggle-switch input:checked + .toggle-slider {
+      background: var(--gold-glow);
+    }
+    .toggle-switch input:checked + .toggle-slider::before {
+      transform: translateX(20px);
+      background: var(--gold);
+    }
+
+    /* Info Row */
+    .info-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0.8rem 0; border-bottom: 1px solid var(--border);
+    }
+    .info-row:last-child { border-bottom: none; }
+    .info-key { font-size: 0.85rem; color: var(--muted); }
+    .info-val { font-size: 0.85rem; font-weight: 500; }
+
+    /* Password Strength */
+    .password-strength {
+      margin-top: 0.3rem; display: flex; gap: 4px; align-items: center;
+    }
+    .strength-bar {
+      flex: 1; height: 4px; border-radius: 100px;
+      background: rgba(255,255,255,0.06);
+    }
+    .strength-bar.filled { background: var(--emerald); }
+    .strength-bar.filled.mid { background: var(--gold); }
+    .strength-bar.filled.weak { background: var(--coral); }
+
+    /* ── FOOTER ── */
+    .settings-footer {
+      padding: 1.2rem 2.5rem;
+      background: var(--bg2);
+      border-top: 1px solid var(--border);
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 0.78rem; color: var(--muted);
+    }
+    .settings-footer .logo-text {
+      font-family: 'Syne', sans-serif; font-weight: 800; font-size: 0.95rem;
+      background: linear-gradient(90deg, var(--gold), var(--emerald));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 900px) {
+      .sidebar { width: 220px; }
+      .settings-main { padding: 1.5rem; }
+      .form-row { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 700px) {
+      .settings-layout { flex-direction: column; }
+      .sidebar {
+        width: 100%; height: auto; position: relative; top: 0;
+        flex-direction: row; overflow-x: auto; padding: 0.8rem;
+        border-right: none; border-bottom: 1px solid var(--border);
+      }
+      .sidebar-profile, .sidebar-section-label, .sidebar-footer { display: none; }
+      .sidebar-menu { flex-direction: row; gap: 4px; }
+      .sidebar-item { white-space: nowrap; font-size: 0.8rem; padding: 0.5rem 0.8rem; }
+      .sidebar-item-icon { width: 26px; height: 26px; font-size: 0.8rem; }
+      .nav-search { display: none; }
+      .settings-main { max-width: 100%; }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Ambient Orbs -->
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+
+  <!-- ── TOP NAVIGATION ── -->
+  <nav class="top-nav">
+    <div class="nav-left">
+      <a href="index (1).html" class="nav-logo">InvestIQ</a>
+      <span class="nav-page-title">
+        <span class="separator">/</span> ⚙️ Settings
+      </span>
+    </div>
+
+    <div class="nav-search">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="settingsSearch" placeholder="Search settings..." autocomplete="off">
+    </div>
+
+    <div class="nav-right">
+      <a href="index (1).html" class="nav-btn">← Back to Home</a>
+    </div>
+  </nav>
+
+  <!-- ── SETTINGS LAYOUT ── -->
+  <div class="settings-layout">
+
+    <!-- ── LEFT SIDEBAR ── -->
+    <aside class="sidebar" id="settingsSidebar">
+
+      <!-- User Profile Card -->
+      <div class="sidebar-profile">
+        <div class="sidebar-profile-inner" onclick="showPanel('profile')">
+          <div class="sidebar-avatar">NB</div>
+          <div class="sidebar-user-info">
+            <div class="sidebar-username">Neha B.</div>
+            <div class="sidebar-email">neha@investiq.com</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- General Section -->
+      <div class="sidebar-section-label">General</div>
+      <div class="sidebar-menu">
+        <a class="sidebar-item active" data-panel="profile" onclick="showPanel('profile')">
+          <span class="sidebar-item-icon">👤</span> Profile
+        </a>
+        <a class="sidebar-item" data-panel="account" onclick="showPanel('account')">
+          <span class="sidebar-item-icon">🔑</span> Account
+        </a>
+        <a class="sidebar-item" data-panel="privacy" onclick="showPanel('privacy')">
+          <span class="sidebar-item-icon">🛡️</span> Privacy
+        </a>
+      </div>
+
+      <!-- Preferences Section -->
+      <div class="sidebar-section-label" style="margin-top: 0.8rem;">Preferences</div>
+      <div class="sidebar-menu">
+        <a class="sidebar-item" data-panel="notifications" onclick="showPanel('notifications')">
+          <span class="sidebar-item-icon">🔔</span> Notifications
+        </a>
+        <a class="sidebar-item" data-panel="appearance" onclick="showPanel('appearance')">
+          <span class="sidebar-item-icon">🎨</span> Appearance
+        </a>
+      </div>
+
+      <!-- Support Section -->
+      <div class="sidebar-section-label" style="margin-top: 0.8rem;">Support</div>
+      <div class="sidebar-menu">
+        <a class="sidebar-item" data-panel="help" onclick="showPanel('help')">
+          <span class="sidebar-item-icon">❓</span> Help & Support
+        </a>
+      </div>
+
+      <!-- Sidebar Footer -->
+      <div class="sidebar-footer">
+        <button class="sidebar-footer-btn" onclick="alert('Logged out!')">
+          🚪 Log Out
+        </button>
+      </div>
+    </aside>
+
+    <!-- ── MAIN CONTENT ── -->
+    <main class="settings-main">
+
+      <!-- ═══════════════════════════════════ -->
+      <!-- PANEL: PROFILE                      -->
+      <!-- ═══════════════════════════════════ -->
+      <div class="settings-panel active" id="panel-profile">
+        <div class="panel-header">
+          <h1 class="panel-title">👤 Edit Profile</h1>
+          <p class="panel-subtitle">Update your personal information and profile picture</p>
+        </div>
+
+        <div class="settings-card" style="--card-accent: var(--gold);">
+          <div class="card-section-title">
+            <span class="icon" style="background: var(--gold-glow);">📷</span> Profile Photo
+          </div>
+          <div class="avatar-upload">
+            <div class="avatar-preview">NB</div>
+            <div class="avatar-actions">
+              <label class="upload-label">
+                📁 Upload New Photo
+                <input type="file" accept="image/*" id="avatarUpload">
+              </label>
+              <span class="upload-hint">JPG, PNG or GIF — Max 2MB</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-card" style="--card-accent: var(--emerald);">
+          <div class="card-section-title">
+            <span class="icon" style="background: rgba(0,217,126,0.12);">📝</span> Personal Information
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">First Name</label>
+              <input class="form-input" type="text" placeholder="Neha" value="Neha">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Last Name</label>
+              <input class="form-input" type="text" placeholder="B." value="B.">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Email Address</label>
+              <input class="form-input" type="email" placeholder="neha@investiq.com" value="neha@investiq.com">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Phone Number</label>
+              <input class="form-input" type="tel" placeholder="+91 98765 43210">
+            </div>
+          </div>
+          <div class="form-row single">
+            <div class="form-group">
+              <label class="form-label">Bio</label>
+              <textarea class="form-input" placeholder="Tell us a bit about yourself...">Passionate investor exploring the stock market with AI-powered tools.</textarea>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Location</label>
+              <input class="form-input" type="text" placeholder="Mumbai, India">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Timezone</label>
+              <select class="form-input">
+                <option selected>IST (UTC +5:30)</option>
+                <option>EST (UTC -5:00)</option>
+                <option>PST (UTC -8:00)</option>
+                <option>GMT (UTC +0:00)</option>
+              </select>
+            </div>
+          </div>
+          <div class="btn-row">
+            <button class="btn-gold" onclick="showToast('Profile saved!')">💾 Save Changes</button>
+            <button class="btn-outline">Cancel</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════════ -->
+      <!-- PANEL: ACCOUNT                      -->
+      <!-- ═══════════════════════════════════ -->
+      <div class="settings-panel" id="panel-account">
+        <div class="panel-header">
+          <h1 class="panel-title">🔑 Account Settings</h1>
+          <p class="panel-subtitle">Manage your login credentials and account details</p>
+        </div>
+
+        <div class="settings-card" style="--card-accent: var(--sky);">
+          <div class="card-section-title">
+            <span class="icon" style="background: rgba(56,191,255,0.12);">📋</span> Account Details
+          </div>
+          <div class="info-row">
+            <span class="info-key">Username</span>
+            <span class="info-val">neha_investiq</span>
+          </div>
+          <div class="info-row">
+            <span class="info-key">Account ID</span>
+            <span class="info-val" style="color: var(--gold);">INV-12345</span>
+          </div>
+          <div class="info-row">
+            <span class="info-key">Member Since</span>
+            <span class="info-val">January 2025</span>
+          </div>
+          <div class="info-row">
+            <span class="info-key">Plan</span>
+            <span class="info-val" style="color: var(--gold);">⭐ Premium</span>
+          </div>
+        </div>
+
+        <div class="settings-card" style="--card-accent: var(--emerald);">
+          <div class="card-section-title">
+            <span class="icon" style="background: rgba(0,217,126,0.12);">🔐</span> Change Password
+          </div>
+          <div class="form-row single">
+            <div class="form-group">
+              <label class="form-label">Current Password</label>
+              <input class="form-input" type="password" placeholder="Enter current password">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">New Password</label>
+              <input class="form-input" type="password" placeholder="Enter new password" id="newPwd" oninput="updateStrength()">
+              <div class="password-strength" id="pwdStrength">
+                <div class="strength-bar"></div>
+                <div class="strength-bar"></div>
+                <div class="strength-bar"></div>
+                <div class="strength-bar"></div>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Confirm Password</label>
+              <input class="form-input" type="password" placeholder="Re-enter new password">
+            </div>
+          </div>
+          <div class="btn-row">
+            <button class="btn-gold" onclick="showToast('Password updated!')">🔒 Update Password</button>
+          </div>
+        </div>
+
+        <div class="settings-card" style="--card-accent: var(--coral);">
+          <div class="card-section-title">
+            <span class="icon" style="background: rgba(255,107,107,0.12);">⚠️</span> Danger Zone
+          </div>
+          <p style="font-size: 0.85rem; color: var(--muted); margin-bottom: 1rem; line-height: 1.6;">
+            Deleting your account is permanent. All your data, watchlists, and AI insights will be lost.
+          </p>
+          <button class="btn-danger">🗑️ Delete Account</button>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════════ -->
+      <!-- PANEL: PRIVACY                      -->
+      <!-- ═══════════════════════════════════ -->
+      <div class="settings-panel" id="panel-privacy">
+        <div class="panel-header">
+          <h1 class="panel-title">🛡️ Privacy & Security</h1>
+          <p class="panel-subtitle">Control your data, visibility and security preferences</p>
+        </div>
+
+        <div class="settings-card" style="--card-accent: var(--purple);">
+          <div class="card-section-title">
+            <span class="icon" style="background: rgba(167,139,250,0.12);">🔒</span> Security
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-info">
+              <span class="toggle-label">Two-Factor Authentication</span>
+              <span class="toggle-desc">Add an extra layer of security to your account</span>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-info">
+              <span class="toggle-label">Login Alerts</span>
+              <span class="toggle-desc">Get notified when a new device logs into your account</span>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-info">
+              <span class="toggle-label">Session Timeout</span>
+              <span class="toggle-desc">Auto-logout after 30 minutes of inactivity</span>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <div class="settings-card" style="--card-accent: var(--sky);">
+          <div class="card-section-title">
+            <span class="icon" style="background: rgba(56,191,255,0.12);">👁️</span> Data & Visibility
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-info">
+              <span class="toggle-label">Public Profile</span>
+              <span class="toggle-desc">Allow others to see your profile information</span>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-info">
+              <span class="toggle-label">Share Portfolio Performance</span>
+              <span class="toggle-desc">Let AI learn from your portfolio for better recommendations</span>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-info">
+              <span class="toggle-label">Data Analytics</span>
+              <span class="toggle-desc">Allow anonymous data collection to improve features</span>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="btn-row">
+            <button class="btn-gold" onclick="showToast('Privacy settings saved!')">💾 Save Preferences</button>
+            <button class="btn-outline">🗂️ Export My Data</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════════ -->
+      <!-- PANEL: NOTIFICATIONS                -->
+      <!-- ═══════════════════════════════════ -->
+      <div class="settings-panel" id="panel-notifications">
+        <div class="panel-header">
+          <h1 class="panel-title">🔔 Notifications</h1>
+          <p class="panel-subtitle">Choose how and when you receive updates</p>
+        </div>
+
+        <div class="settings-card" style="--card-accent: var(--gold);">
+          <div class="card-section-title">
+            <span class="icon" style="background: var(--gold-glow);">📧</span> Email Notifications
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-info">
+              <span class="toggle-label">Daily Market Summary</span>
+              <span class="toggle-desc">Receive a daily digest of your portfolio performance</span>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-info">
+              <span class="toggle-label">Price Alerts</span>
+              <span class="toggle-desc">Get notified when stocks hit your target price</span>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-info">
+              <span class="toggle-label">Weekly AI Insights</span>
+              <span class="toggle-desc">AI-generated investment insights every Monday</span>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-info">
+              <span class="toggle-label">Promotional Emails</span>
+              <span class="toggle-desc">Offers, feature updates and InvestIQ news</span>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <div class="settings-card" style="--card-accent: var(--emerald);">
+          <div class="card-section-title">
+            <span class="icon" style="background: rgba(0,217,126,0.12);">📱</span> Push & SMS Alerts
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-info">
+              <span class="toggle-label">Push Notifications</span>
+              <span class="toggle-desc">Real-time alerts in your browser</span>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-info">
+              <span class="toggle-label">SMS Alerts</span>
+              <span class="toggle-desc">Critical alerts sent to your phone number</span>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="btn-row">
+            <button class="btn-gold" onclick="showToast('Notification preferences saved!')">💾 Save Preferences</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════════ -->
+      <!-- PANEL: APPEARANCE                   -->
+      <!-- ═══════════════════════════════════ -->
+      <div class="settings-panel" id="panel-appearance">
+        <div class="panel-header">
+          <h1 class="panel-title">🎨 Appearance</h1>
+          <p class="panel-subtitle">Customize the look and feel of InvestIQ</p>
+        </div>
+
+        <div class="settings-card" style="--card-accent: var(--gold);">
+          <div class="card-section-title">
+            <span class="icon" style="background: var(--gold-glow);">🌓</span> Theme
+          </div>
+          <div class="theme-options">
+            <label class="theme-option selected" id="theme-dark">
+              <input type="radio" name="theme" value="dark" checked style="display:none;">
+              <span class="theme-preview" style="background: var(--bg); border-color: var(--gold);">
+                <span style="background: var(--gold); width: 16px; height: 3px; border-radius: 2px; display: block; margin-bottom: 4px;"></span>
+                <span style="background: var(--muted); width: 24px; height: 2px; border-radius: 2px; display: block; margin-bottom: 3px;"></span>
+                <span style="background: rgba(255,255,255,0.1); width: 20px; height: 2px; border-radius: 2px; display: block;"></span>
+              </span>
+              <span class="theme-name">Dark Mode</span>
+            </label>
+            <label class="theme-option" id="theme-light">
+              <input type="radio" name="theme" value="light" style="display:none;">
+              <span class="theme-preview" style="background: #f0f2f5; border-color: var(--border);">
+                <span style="background: var(--gold-dark); width: 16px; height: 3px; border-radius: 2px; display: block; margin-bottom: 4px;"></span>
+                <span style="background: #999; width: 24px; height: 2px; border-radius: 2px; display: block; margin-bottom: 3px;"></span>
+                <span style="background: rgba(0,0,0,0.08); width: 20px; height: 2px; border-radius: 2px; display: block;"></span>
+              </span>
+              <span class="theme-name">Light Mode</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="settings-card" style="--card-accent: var(--sky);">
+          <div class="card-section-title">
+            <span class="icon" style="background: rgba(56,191,255,0.12);">📏</span> Display
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Font Size</label>
+              <select class="form-input">
+                <option>Small</option>
+                <option selected>Medium</option>
+                <option>Large</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Currency Display</label>
+              <select class="form-input">
+                <option selected>₹ INR</option>
+                <option>$ USD</option>
+                <option>€ EUR</option>
+                <option>£ GBP</option>
+              </select>
+            </div>
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-info">
+              <span class="toggle-label">Compact Mode</span>
+              <span class="toggle-desc">Show more data in less space</span>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="btn-row">
+            <button class="btn-gold" onclick="showToast('Appearance saved!')">💾 Save Preferences</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════════ -->
+      <!-- PANEL: HELP                         -->
+      <!-- ═══════════════════════════════════ -->
+      <div class="settings-panel" id="panel-help">
+        <div class="panel-header">
+          <h1 class="panel-title">❓ Help & Support</h1>
+          <p class="panel-subtitle">Get assistance with InvestIQ features and services</p>
+        </div>
+
+        <div class="settings-card" style="--card-accent: var(--emerald);">
+          <div class="card-section-title">
+            <span class="icon" style="background: rgba(0,217,126,0.12);">📞</span> Contact Us
+          </div>
+          <div class="info-row">
+            <span class="info-key">Email</span>
+            <span class="info-val" style="color: var(--gold);">support@investiq.com</span>
+          </div>
+          <div class="info-row">
+            <span class="info-key">Phone</span>
+            <span class="info-val">+91 1800-INVEST</span>
+          </div>
+          <div class="info-row">
+            <span class="info-key">Hours</span>
+            <span class="info-val">Mon–Fri, 9 AM – 6 PM IST</span>
+          </div>
+        </div>
+
+        <div class="settings-card" style="--card-accent: var(--sky);">
+          <div class="card-section-title">
+            <span class="icon" style="background: rgba(56,191,255,0.12);">📚</span> Quick Links
+          </div>
+          <div class="help-links">
+            <a href="#" class="help-link-item">
+              <span>📖</span>
+              <div>
+                <strong>Documentation</strong>
+                <p>Learn how to use all InvestIQ features</p>
+              </div>
+              <span class="help-arrow">→</span>
+            </a>
+            <a href="#" class="help-link-item">
+              <span>🎓</span>
+              <div>
+                <strong>Video Tutorials</strong>
+                <p>Watch step-by-step guides</p>
+              </div>
+              <span class="help-arrow">→</span>
+            </a>
+            <a href="chatbot.html" class="help-link-item">
+              <span>💬</span>
+              <div>
+                <strong>Chat with AI</strong>
+                <p>Get instant help from our AI assistant</p>
+              </div>
+              <span class="help-arrow">→</span>
+            </a>
+            <a href="#" class="help-link-item">
+              <span>🐛</span>
+              <div>
+                <strong>Report a Bug</strong>
+                <p>Let us know if something isn't working</p>
+              </div>
+              <span class="help-arrow">→</span>
+            </a>
+          </div>
+        </div>
+
+        <div class="settings-card" style="--card-accent: var(--muted);">
+          <div class="card-section-title">
+            <span class="icon" style="background: rgba(255,255,255,0.05);">ℹ️</span> About InvestIQ
+          </div>
+          <div class="info-row">
+            <span class="info-key">Version</span>
+            <span class="info-val">2.1.0</span>
+          </div>
+          <div class="info-row">
+            <span class="info-key">Last Updated</span>
+            <span class="info-val">March 2026</span>
+          </div>
+          <div class="info-row">
+            <span class="info-key">License</span>
+            <span class="info-val">Premium</span>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- ── FOOTER ── -->
+  <footer class="settings-footer">
+    <span class="logo-text">InvestIQ</span>
+    <span>© 2026 InvestIQ — All rights reserved</span>
+  </footer>
+
+  <!-- ── TOAST NOTIFICATION ── -->
+  <div id="toast" style="
+    position: fixed; bottom: 2rem; right: 2rem;
+    background: var(--bg3); border: 1px solid rgba(245,200,66,0.3);
+    color: var(--gold); padding: 0.8rem 1.4rem; border-radius: 14px;
+    font-size: 0.88rem; font-weight: 600;
+    display: flex; align-items: center; gap: 0.5rem;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+    transform: translateY(120%); opacity: 0;
+    transition: transform 0.4s cubic-bezier(.4,0,.2,1), opacity 0.4s;
+    z-index: 10000;
+  ">
+    <span>✅</span> <span id="toastMsg">Saved!</span>
+  </div>
+
+  <!-- Extra Styles for theme options and help links -->
+  <style>
+    .theme-options {
+      display: flex; gap: 1rem; margin-top: 0.5rem;
+    }
+    .theme-option {
+      cursor: pointer; text-align: center;
+    }
+    .theme-preview {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      width: 100px; height: 70px; border-radius: 14px;
+      border: 2px solid var(--border);
+      transition: border-color var(--transition), box-shadow var(--transition);
+      padding: 12px;
+    }
+    .theme-option.selected .theme-preview,
+    .theme-option:hover .theme-preview {
+      border-color: var(--gold);
+      box-shadow: 0 0 20px rgba(245, 200, 66, 0.15);
+    }
+    .theme-name {
+      display: block; margin-top: 0.5rem;
+      font-size: 0.78rem; color: var(--muted); font-weight: 500;
+    }
+    .theme-option.selected .theme-name { color: var(--gold); }
+
+    /* Help Links */
+    .help-links {
+      display: flex; flex-direction: column; gap: 0.5rem;
+    }
+    .help-link-item {
+      display: flex; align-items: center; gap: 1rem;
+      padding: 0.9rem 1rem; border-radius: 14px;
+      background: rgba(255,255,255,0.02);
+      border: 1px solid var(--border);
+      color: var(--text); text-decoration: none;
+      transition: background var(--transition), border-color var(--transition);
+    }
+    .help-link-item:hover {
+      background: rgba(255,255,255,0.04);
+      border-color: rgba(245, 200, 66, 0.2);
+    }
+    .help-link-item span:first-child { font-size: 1.3rem; flex-shrink: 0; }
+    .help-link-item div { flex: 1; }
+    .help-link-item strong { font-size: 0.9rem; display: block; }
+    .help-link-item p {
+      font-size: 0.76rem; color: var(--muted); margin-top: 0.15rem;
+    }
+    .help-arrow {
+      color: var(--muted); font-size: 1rem; flex-shrink: 0;
+      transition: color var(--transition), transform var(--transition);
+    }
+    .help-link-item:hover .help-arrow {
+      color: var(--gold); transform: translateX(4px);
+    }
+  </style>
+
+  <!-- ── SCRIPTS ── -->
+  <script>
+    // ── Panel Navigation ──
+    function showPanel(panelId) {
+      // Deactivate all panels
+      document.querySelectorAll('.settings-panel').forEach(p => p.classList.remove('active'));
+      // Deactivate all sidebar items
+      document.querySelectorAll('.sidebar-item').forEach(s => s.classList.remove('active'));
+
+      // Activate the chosen panel
+      const panel = document.getElementById('panel-' + panelId);
+      if (panel) panel.classList.add('active');
+
+      // Activate the corresponding sidebar item
+      const sideItem = document.querySelector(`.sidebar-item[data-panel="${panelId}"]`);
+      if (sideItem) sideItem.classList.add('active');
+    }
+
+    // ── Search Settings ──
+    document.getElementById('settingsSearch').addEventListener('input', function() {
+      const query = this.value.toLowerCase().trim();
+      if (!query) {
+        // Show whichever panel is active
+        return;
+      }
+
+      // Search across all panels for matching text
+      const panels = document.querySelectorAll('.settings-panel');
+      let found = false;
+      panels.forEach(panel => {
+        if (panel.textContent.toLowerCase().includes(query) && !found) {
+          const panelId = panel.id.replace('panel-', '');
+          showPanel(panelId);
+          found = true;
+        }
+      });
+    });
+
+    // ── Password Strength ──
+    function updateStrength() {
+      const pwd = document.getElementById('newPwd').value;
+      const bars = document.querySelectorAll('#pwdStrength .strength-bar');
+      bars.forEach(b => { b.className = 'strength-bar'; });
+
+      let score = 0;
+      if (pwd.length >= 4) score++;
+      if (pwd.length >= 8) score++;
+      if (/[A-Z]/.test(pwd) && /[0-9]/.test(pwd)) score++;
+      if (/[^a-zA-Z0-9]/.test(pwd)) score++;
+
+      const cls = score <= 1 ? 'filled weak' : score <= 2 ? 'filled mid' : 'filled';
+      for (let i = 0; i < score; i++) { bars[i].className = 'strength-bar ' + cls; }
+    }
+
+    // ── Toast ──
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toastMsg').textContent = msg;
+      toast.style.transform = 'translateY(0)';
+      toast.style.opacity = '1';
+      setTimeout(() => {
+        toast.style.transform = 'translateY(120%)';
+        toast.style.opacity = '0';
+      }, 2500);
+    }
+
+    // ── Theme Toggle (appearance panel) ──
+    document.querySelectorAll('.theme-option').forEach(opt => {
+      opt.addEventListener('click', function() {
+        document.querySelectorAll('.theme-option').forEach(o => o.classList.remove('selected'));
+        this.classList.add('selected');
+      });
+    });
+  </script>
+
+</body>
+
+</html>
