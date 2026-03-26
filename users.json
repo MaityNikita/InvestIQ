@@ -5,5 +5,12 @@
     "email": "test@investiq.com",
     "password_hash": "scrypt:32768:8:1$1POqcPQ8xLhWX0Ch$532db0e748595e661c352ab5d0fba1668d8451982a90e5fc4232e6d349cfeab458bf8701c67cc2d24aae2b015418ae6ae0a011cde9ac685b97294067a815d9dc",
     "created_at": "2026-03-19T08:47:37.734591+00:00"
+  },
+  {
+    "id": "2e56f264-6da9-46bc-a779-9682f09903e7",
+    "name": "scarrose",
+    "email": "scarrose@gmail.com",
+    "password_hash": "scrypt:32768:8:1$Fdr7nzWuBSyRPQbX$da8f60c2514928d907a55c9a46690546353fb42be17d773d7468df1462998a01fe3116ecd091c60e1c726e6eb63cf009d4dd9fd6cf39fcd8340d41fa6c4b9697",
+    "created_at": "2026-03-23T09:14:12.145017+00:00"
   }
 ]

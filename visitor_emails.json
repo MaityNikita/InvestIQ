@@ -4,5 +4,11 @@
     "source": "registered",
     "timestamp": "2026-03-19T08:47:37.768482+00:00",
     "name": "Test User"
+  },
+  {
+    "email": "scarrose@gmail.com",
+    "source": "registered",
+    "timestamp": "2026-03-23T09:14:12.165849+00:00",
+    "name": "scarrose"
   }
 ]
