@@ -1,0 +1,1750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Settings — InvestIQ</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --gold: #F5C842;
+      --gold-light: #FFE580;
+      --emerald: #00D97E;
+      --sky: #38BFFF;
+      --coral: #FF6B6B;
+      --bg: #060A12;
+      --bg2: #0C1220;
+      --bg3: #111927;
+      --text: #EEF2FF;
+      --muted: #7A8BA0;
+      --border: rgba(255, 255, 255, 0.07);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      overflow-x: hidden;
+      min-height: 100vh;
+    }
+
+    /* Noise overlay */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 9999;
+      opacity: 0.35;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1.2rem 5vw;
+      background: rgba(6, 10, 18, 0.7);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-logo {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 1.4rem;
+      letter-spacing: -0.03em;
+      background: linear-gradient(90deg, var(--gold), var(--emerald));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-decoration: none;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 2rem;
+      list-style: none;
+    }
+
+    .nav-links a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+      transition: color 0.25s;
+    }
+
+    .nav-links a:hover { color: var(--text); }
+
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+    }
+
+    .nav-user-chip {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      padding: 0.4rem 1rem 0.4rem 0.5rem;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .nav-user-avatar {
+      width: 26px; height: 26px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--gold), var(--emerald));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 800;
+      color: var(--bg);
+    }
+
+    .nav-back {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      color: var(--muted);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.82rem;
+      padding: 0.45rem 1.1rem;
+      cursor: pointer;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: border-color 0.2s, color 0.2s;
+    }
+
+    .nav-back:hover { border-color: rgba(255,255,255,0.2); color: var(--text); }
+
+    /* ── PAGE LAYOUT ── */
+    .page-wrap {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      gap: 0;
+      min-height: 100vh;
+      padding-top: 72px;
+    }
+
+    /* ── SIDEBAR ── */
+    .sidebar {
+      position: sticky;
+      top: 72px;
+      height: calc(100vh - 72px);
+      background: var(--bg2);
+      border-right: 1px solid var(--border);
+      padding: 2rem 1.2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      overflow-y: auto;
+    }
+
+    .sidebar-header {
+      font-family: 'Syne', sans-serif;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      padding: 0 0.8rem;
+      margin-bottom: 0.6rem;
+    }
+
+    .sidebar-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem 0.8rem;
+      border-radius: 12px;
+      cursor: pointer;
+      color: var(--muted);
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: background 0.2s, color 0.2s;
+      border: 1px solid transparent;
+      text-decoration: none;
+    }
+
+    .sidebar-item:hover {
+      background: rgba(255,255,255,0.04);
+      color: var(--text);
+    }
+
+    .sidebar-item.active {
+      background: rgba(245, 200, 66, 0.08);
+      border-color: rgba(245, 200, 66, 0.15);
+      color: var(--gold);
+    }
+
+    .sidebar-item .si-icon {
+      width: 34px; height: 34px;
+      border-radius: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      background: rgba(255,255,255,0.04);
+      flex-shrink: 0;
+      transition: background 0.2s;
+    }
+
+    .sidebar-item.active .si-icon {
+      background: rgba(245, 200, 66, 0.12);
+    }
+
+    .sidebar-divider {
+      height: 1px;
+      background: var(--border);
+      margin: 0.8rem 0;
+    }
+
+    .sidebar-danger {
+      color: var(--coral) !important;
+    }
+
+    .sidebar-danger:hover {
+      background: rgba(255, 107, 107, 0.07) !important;
+      color: var(--coral) !important;
+    }
+
+    .sidebar-danger .si-icon { background: rgba(255,107,107,0.08) !important; }
+
+    /* ── MAIN CONTENT ── */
+    .main-content {
+      padding: 2.5rem 3rem;
+      max-width: 820px;
+    }
+
+    /* Sub-pages: hide all, show active */
+    .settings-page { display: none; }
+    .settings-page.active { display: block; animation: fadeUp 0.4s ease both; }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── PAGE HEADER ── */
+    .page-header {
+      margin-bottom: 2.5rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .page-tag {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 0.5rem;
+    }
+
+    .page-title {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 1.9rem;
+      letter-spacing: -0.03em;
+      line-height: 1.15;
+    }
+
+    .page-sub {
+      color: var(--muted);
+      font-size: 0.95rem;
+      font-weight: 300;
+      margin-top: 0.4rem;
+      line-height: 1.6;
+    }
+
+    /* ── CARDS / SECTIONS ── */
+    .settings-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 1.8rem;
+      margin-bottom: 1.4rem;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.25s;
+    }
+
+    .settings-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--card-accent, var(--gold)), transparent);
+      opacity: 0.5;
+    }
+
+    .card-title {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 1rem;
+      margin-bottom: 1.4rem;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .card-title-icon {
+      width: 28px; height: 28px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.9rem;
+      background: rgba(245,200,66,0.1);
+    }
+
+    /* ── FORM ELEMENTS ── */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .form-grid.full { grid-template-columns: 1fr; }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .field-label {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--muted);
+      letter-spacing: 0.01em;
+    }
+
+    .field-input {
+      width: 100%;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 0.75rem 1rem;
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .field-input:focus { border-color: rgba(245, 200, 66, 0.5); }
+    .field-input::placeholder { color: var(--muted); }
+
+    select.field-input {
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%237A8BA0' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 1rem center;
+      padding-right: 2.5rem;
+    }
+
+    textarea.field-input {
+      resize: vertical;
+      min-height: 90px;
+    }
+
+    /* ── AVATAR UPLOAD ── */
+    .avatar-row {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      margin-bottom: 1.6rem;
+    }
+
+    .avatar-big {
+      width: 80px; height: 80px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--gold), var(--emerald));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Syne', sans-serif;
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--bg);
+      flex-shrink: 0;
+      position: relative;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+
+    .avatar-big:hover { transform: scale(1.05); }
+
+    .avatar-big .avatar-edit-badge {
+      position: absolute;
+      bottom: 2px; right: 2px;
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      background: var(--bg2);
+      border: 2px solid var(--bg2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.65rem;
+    }
+
+    .avatar-info p { color: var(--muted); font-size: 0.82rem; margin-top: 0.3rem; line-height: 1.5; }
+
+    .btn-upload {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.82rem;
+      font-weight: 600;
+      padding: 0.5rem 1.2rem;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+    }
+
+    .btn-upload:hover {
+      background: rgba(255,255,255,0.1);
+      border-color: rgba(255,255,255,0.2);
+    }
+
+    /* ── BUTTONS ── */
+    .btn-save {
+      background: linear-gradient(135deg, var(--gold), #E8A800);
+      color: var(--bg);
+      border: none;
+      border-radius: 100px;
+      padding: 0.75rem 2rem;
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 700;
+      font-size: 0.92rem;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .btn-save:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 28px rgba(245,200,66,0.4);
+    }
+
+    .btn-danger {
+      background: rgba(255,107,107,0.1);
+      color: var(--coral);
+      border: 1px solid rgba(255,107,107,0.25);
+      border-radius: 100px;
+      padding: 0.75rem 2rem;
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 600;
+      font-size: 0.92rem;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .btn-danger:hover {
+      background: rgba(255,107,107,0.18);
+      border-color: rgba(255,107,107,0.5);
+    }
+
+    .btn-ghost-sm {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      color: var(--muted);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.82rem;
+      padding: 0.5rem 1.2rem;
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s;
+    }
+
+    .btn-ghost-sm:hover { border-color: rgba(255,255,255,0.2); color: var(--text); }
+
+    .card-footer {
+      margin-top: 1.4rem;
+      padding-top: 1.2rem;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .footer-hint { color: var(--muted); font-size: 0.78rem; }
+
+    /* ── TOGGLE SWITCH ── */
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.9rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .toggle-row:last-child { border-bottom: none; }
+
+    .toggle-info h4 {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .toggle-info p {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-top: 0.2rem;
+      line-height: 1.5;
+    }
+
+    .toggle {
+      position: relative;
+      width: 44px;
+      height: 24px;
+      flex-shrink: 0;
+    }
+
+    .toggle input { opacity: 0; width: 0; height: 0; }
+
+    .toggle-track {
+      position: absolute;
+      inset: 0;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      cursor: pointer;
+      transition: background 0.25s, border-color 0.25s;
+    }
+
+    .toggle-track::after {
+      content: '';
+      position: absolute;
+      width: 16px; height: 16px;
+      top: 3px; left: 3px;
+      background: var(--muted);
+      border-radius: 50%;
+      transition: transform 0.25s, background 0.25s;
+    }
+
+    .toggle input:checked + .toggle-track {
+      background: rgba(0, 217, 126, 0.15);
+      border-color: rgba(0, 217, 126, 0.35);
+    }
+
+    .toggle input:checked + .toggle-track::after {
+      transform: translateX(20px);
+      background: var(--emerald);
+    }
+
+    /* ── RISK TOLERANCE SLIDER ── */
+    .risk-slider-wrap {
+      margin-top: 0.5rem;
+    }
+
+    .risk-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+    }
+
+    input[type="range"].risk-slider {
+      width: 100%;
+      height: 6px;
+      appearance: none;
+      background: linear-gradient(90deg, var(--emerald) 0%, var(--gold) 50%, var(--coral) 100%);
+      border-radius: 100px;
+      outline: none;
+      cursor: pointer;
+    }
+
+    input[type="range"].risk-slider::-webkit-slider-thumb {
+      appearance: none;
+      width: 20px; height: 20px;
+      border-radius: 50%;
+      background: var(--text);
+      border: 3px solid var(--gold);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+      cursor: pointer;
+      transition: box-shadow 0.2s;
+    }
+
+    input[type="range"].risk-slider::-webkit-slider-thumb:hover {
+      box-shadow: 0 2px 16px rgba(245,200,66,0.5);
+    }
+
+    .risk-value-badge {
+      display: inline-block;
+      margin-top: 0.8rem;
+      padding: 0.3rem 1rem;
+      border-radius: 100px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .risk-low  { background: rgba(0,217,126,0.12); color: var(--emerald); border: 1px solid rgba(0,217,126,0.25); }
+    .risk-medium { background: rgba(245,200,66,0.12); color: var(--gold); border: 1px solid rgba(245,200,66,0.25); }
+    .risk-high { background: rgba(255,107,107,0.12); color: var(--coral); border: 1px solid rgba(255,107,107,0.25); }
+
+    /* ── PILL MULTI-SELECT ── */
+    .pill-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+      margin-top: 0.5rem;
+    }
+
+    .pill {
+      padding: 0.45rem 1rem;
+      border-radius: 100px;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: var(--bg3);
+      user-select: none;
+    }
+
+    .pill:hover {
+      border-color: rgba(245,200,66,0.3);
+      color: var(--text);
+    }
+
+    .pill.selected {
+      background: rgba(245,200,66,0.1);
+      border-color: rgba(245,200,66,0.4);
+      color: var(--gold);
+    }
+
+    .pill.selected-sky {
+      background: rgba(56,191,255,0.1);
+      border-color: rgba(56,191,255,0.35);
+      color: var(--sky);
+    }
+
+    .pill.selected-emerald {
+      background: rgba(0,217,126,0.1);
+      border-color: rgba(0,217,126,0.35);
+      color: var(--emerald);
+    }
+
+    /* ── INVESTMENT AMOUNT ROW ── */
+    .amount-wrap {
+      position: relative;
+    }
+
+    .amount-prefix {
+      position: absolute;
+      left: 1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--gold);
+      font-weight: 700;
+      font-size: 0.95rem;
+      pointer-events: none;
+    }
+
+    .amount-input {
+      padding-left: 2rem !important;
+    }
+
+    /* ── PASSWORD STRENGTH ── */
+    .pw-strength {
+      margin-top: 0.4rem;
+      display: flex;
+      gap: 4px;
+    }
+
+    .pw-bar {
+      height: 3px;
+      flex: 1;
+      border-radius: 100px;
+      background: var(--bg3);
+      transition: background 0.3s;
+    }
+
+    .pw-bar.weak   { background: var(--coral); }
+    .pw-bar.medium { background: var(--gold); }
+    .pw-bar.strong { background: var(--emerald); }
+
+    /* ── BADGE ── */
+    .badge {
+      display: inline-block;
+      padding: 0.25rem 0.7rem;
+      border-radius: 100px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .badge-gold    { background: rgba(245,200,66,0.12); color: var(--gold); border: 1px solid rgba(245,200,66,0.25); }
+    .badge-emerald { background: rgba(0,217,126,0.12); color: var(--emerald); border: 1px solid rgba(0,217,126,0.25); }
+    .badge-coral   { background: rgba(255,107,107,0.12); color: var(--coral); border: 1px solid rgba(255,107,107,0.25); }
+    .badge-sky     { background: rgba(56,191,255,0.12); color: var(--sky); border: 1px solid rgba(56,191,255,0.25); }
+
+    /* ── PRIVACY SECTION SPECIFIC ── */
+    .section-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin: 1.6rem 0 0.8rem;
+    }
+
+    .session-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.85rem 1rem;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      margin-bottom: 0.6rem;
+      gap: 1rem;
+    }
+
+    .session-info { display: flex; align-items: center; gap: 0.75rem; }
+    .session-icon { font-size: 1.1rem; }
+
+    .session-detail h5 { font-size: 0.88rem; font-weight: 600; }
+    .session-detail p  { font-size: 0.75rem; color: var(--muted); margin-top: 0.15rem; }
+
+    .session-current { color: var(--emerald); font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+
+    /* ── SAVE TOAST ── */
+    .save-toast {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      background: var(--bg2);
+      border: 1px solid rgba(0,217,126,0.3);
+      border-radius: 14px;
+      padding: 0.9rem 1.4rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--emerald);
+      box-shadow: 0 16px 48px rgba(0,0,0,0.5);
+      z-index: 9000;
+      transform: translateY(20px);
+      opacity: 0;
+      transition: transform 0.3s, opacity 0.3s;
+      pointer-events: none;
+    }
+
+    .save-toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 900px) {
+      .page-wrap { grid-template-columns: 1fr; }
+
+      .sidebar {
+        position: static;
+        height: auto;
+        flex-direction: row;
+        flex-wrap: wrap;
+        padding: 1rem;
+        gap: 0.3rem;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .sidebar-header { display: none; }
+      .sidebar-divider { display: none; }
+
+      .sidebar-item {
+        flex-direction: column;
+        gap: 0.3rem;
+        padding: 0.6rem 0.8rem;
+        font-size: 0.75rem;
+        text-align: center;
+      }
+
+      .si-icon { width: 28px; height: 28px; font-size: 0.85rem; }
+
+      .main-content { padding: 1.5rem; }
+      .form-grid { grid-template-columns: 1fr; }
+      .nav-links { display: none; }
+    }
+
+    /* ── THEME OPTIONS ── */
+    .theme-options { display: flex; gap: 1rem; margin-top: 0.5rem; }
+    .theme-option { cursor: pointer; text-align: center; }
+    .theme-preview {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      width: 100px; height: 70px; border-radius: 14px;
+      border: 2px solid var(--border);
+      transition: border-color 0.25s, box-shadow 0.25s;
+      padding: 12px;
+    }
+    .theme-option.selected .theme-preview,
+    .theme-option:hover .theme-preview {
+      border-color: var(--gold);
+      box-shadow: 0 0 20px rgba(245, 200, 66, 0.15);
+    }
+    .theme-name {
+      display: block; margin-top: 0.5rem;
+      font-size: 0.78rem; color: var(--muted); font-weight: 500;
+    }
+    .theme-option.selected .theme-name { color: var(--gold); }
+
+    /* ── HELP LINKS ── */
+    .help-links { display: flex; flex-direction: column; gap: 0.5rem; }
+    .help-link-item {
+      display: flex; align-items: center; gap: 1rem;
+      padding: 0.9rem 1rem; border-radius: 14px;
+      background: rgba(255,255,255,0.02);
+      border: 1px solid var(--border);
+      color: var(--text); text-decoration: none;
+      transition: background 0.25s, border-color 0.25s;
+    }
+    .help-link-item:hover {
+      background: rgba(255,255,255,0.04);
+      border-color: rgba(245, 200, 66, 0.2);
+    }
+    .help-link-item span:first-child { font-size: 1.3rem; flex-shrink: 0; }
+    .help-link-item div { flex: 1; }
+    .help-link-item strong { font-size: 0.9rem; display: block; }
+    .help-link-item p { font-size: 0.76rem; color: var(--muted); margin-top: 0.15rem; }
+    .help-arrow {
+      color: var(--muted); font-size: 1rem; flex-shrink: 0;
+      transition: color 0.25s, transform 0.25s;
+    }
+    .help-link-item:hover .help-arrow { color: var(--gold); transform: translateX(4px); }
+
+    /* ── INFO ROW ── */
+    .info-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0.8rem 0; border-bottom: 1px solid var(--border);
+    }
+    .info-row:last-child { border-bottom: none; }
+    .info-key { font-size: 0.85rem; color: var(--muted); }
+    .info-val { font-size: 0.85rem; font-weight: 500; }
+  </style>
+</head>
+<body>
+
+<!-- Save Toast -->
+<div class="save-toast" id="saveToast">✓ &nbsp;Changes saved successfully</div>
+
+<!-- NAV -->
+<nav>
+  <a href="index.html" class="nav-logo">InvestIQ ⚡</a>
+  <ul class="nav-links">
+    <li><a href="index.html#features">Features</a></li>
+    <li><a href="index.html#demo">Demo</a></li>
+    <li><a href="index.html#how">How it Works</a></li>
+    <li><a href="index.html#team">Team</a></li>
+  </ul>
+  <div class="nav-right">
+    <div class="nav-user-chip">
+      <div class="nav-user-avatar">N</div>
+      <span>Nikita</span>
+    </div>
+    <a href="index.html" class="nav-back">← Back</a>
+  </div>
+</nav>
+
+<!-- PAGE LAYOUT -->
+<div class="page-wrap">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-header">Settings</div>
+
+    <a class="sidebar-item active" onclick="switchPage('profile', this)" href="#">
+      <div class="si-icon">👤</div>
+      Profile
+    </a>
+    <a class="sidebar-item" onclick="switchPage('privacy', this)" href="#">
+      <div class="si-icon">🔒</div>
+      Privacy
+    </a>
+    <a class="sidebar-item" onclick="switchPage('account', this)" href="#">
+      <div class="si-icon">🔑</div>
+      Account
+    </a>
+    <a class="sidebar-item" onclick="switchPage('preferences', this)" href="#">
+      <div class="si-icon">📊</div>
+      Preferences
+    </a>
+
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-header">Account</div>
+
+    <a class="sidebar-item" onclick="switchPage('notifications', this)" href="#">
+      <div class="si-icon">🔔</div>
+      Notifications
+    </a>
+    <a class="sidebar-item" onclick="switchPage('security', this)" href="#">
+      <div class="si-icon">🛡️</div>
+      Security
+    </a>
+    <a class="sidebar-item" onclick="switchPage('appearance', this)" href="#">
+      <div class="si-icon">🎨</div>
+      Appearance
+    </a>
+
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-header">Support</div>
+
+    <a class="sidebar-item" onclick="switchPage('help', this)" href="#">
+      <div class="si-icon">❓</div>
+      Help & Support
+    </a>
+
+    <div class="sidebar-divider"></div>
+
+    <a class="sidebar-item sidebar-danger" onclick="switchPage('danger', this)" href="#">
+      <div class="si-icon">⚠️</div>
+      Danger Zone
+    </a>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-content">
+
+    <!-- ═══════════════ PROFILE PAGE ═══════════════ -->
+    <div class="settings-page active" id="page-profile">
+      <div class="page-header">
+        <div class="page-tag">Settings · Profile</div>
+        <h1 class="page-title">Your Profile</h1>
+        <p class="page-sub">Manage your personal details and public information.</p>
+      </div>
+
+      <!-- Avatar card -->
+      <div class="settings-card">
+        <div class="card-title"><div class="card-title-icon">🖼️</div> Profile Picture</div>
+        <div class="avatar-row">
+          <div class="avatar-big" id="profileAvatar" title="Change photo">
+            N
+            <span class="avatar-edit-badge">✏️</span>
+          </div>
+          <div class="avatar-info">
+            <button class="btn-upload">Upload Photo</button>
+            <p>JPG, PNG or GIF · Max 2 MB<br>Recommended 400×400 px</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Personal info card -->
+      <div class="settings-card">
+        <div class="card-title"><div class="card-title-icon">📝</div> Personal Information</div>
+        <div class="form-grid">
+          <div class="field">
+            <label class="field-label">First Name</label>
+            <input class="field-input" type="text" value="Nikita" placeholder="First name">
+          </div>
+          <div class="field">
+            <label class="field-label">Last Name</label>
+            <input class="field-input" type="text" value="Sharma" placeholder="Last name">
+          </div>
+          <div class="field">
+            <label class="field-label">Display Name</label>
+            <input class="field-input" type="text" value="Nikita S." placeholder="How you appear">
+          </div>
+          <div class="field">
+            <label class="field-label">Date of Birth</label>
+            <input class="field-input" type="date" value="2003-06-15">
+          </div>
+          <div class="field" style="grid-column: 1/-1;">
+            <label class="field-label">Bio</label>
+            <textarea class="field-input" placeholder="Tell us a bit about yourself…">B.Tech CSE student at Medicaps University, passionate about AI and investing.</textarea>
+          </div>
+        </div>
+        <div class="card-footer">
+          <span class="footer-hint">Last updated 2 days ago</span>
+          <button class="btn-save" onclick="showToast()">Save Changes →</button>
+        </div>
+      </div>
+
+      <!-- Contact info card -->
+      <div class="settings-card" style="--card-accent: var(--sky);">
+        <div class="card-title"><div class="card-title-icon" style="background:rgba(56,191,255,0.1);">📬</div> Contact Information</div>
+        <div class="form-grid">
+          <div class="field">
+            <label class="field-label">Email Address</label>
+            <input class="field-input" type="email" value="nikita@example.com" placeholder="your@email.com">
+          </div>
+          <div class="field">
+            <label class="field-label">Phone Number</label>
+            <input class="field-input" type="tel" value="+91 98765 43210" placeholder="+91 XXXXX XXXXX">
+          </div>
+          <div class="field">
+            <label class="field-label">City</label>
+            <input class="field-input" type="text" value="Indore" placeholder="Your city">
+          </div>
+          <div class="field">
+            <label class="field-label">Country</label>
+            <select class="field-input">
+              <option value="IN" selected>India</option>
+              <option value="US">United States</option>
+              <option value="UK">United Kingdom</option>
+              <option value="SG">Singapore</option>
+              <option value="AE">UAE</option>
+            </select>
+          </div>
+        </div>
+        <div class="card-footer">
+          <span class="footer-hint"><span class="badge badge-sky">Verified</span> &nbsp;Email is verified</span>
+          <button class="btn-save" onclick="showToast()">Save Changes →</button>
+        </div>
+      </div>
+
+      <!-- Social links card -->
+      <div class="settings-card" style="--card-accent: var(--emerald);">
+        <div class="card-title"><div class="card-title-icon" style="background:rgba(0,217,126,0.1);">🔗</div> Social & Professional Links</div>
+        <div class="form-grid">
+          <div class="field">
+            <label class="field-label">LinkedIn</label>
+            <input class="field-input" type="url" placeholder="https://linkedin.com/in/yourname">
+          </div>
+          <div class="field">
+            <label class="field-label">Twitter / X</label>
+            <input class="field-input" type="url" placeholder="https://x.com/yourhandle">
+          </div>
+          <div class="field">
+            <label class="field-label">GitHub</label>
+            <input class="field-input" type="url" placeholder="https://github.com/yourusername">
+          </div>
+          <div class="field">
+            <label class="field-label">Portfolio / Website</label>
+            <input class="field-input" type="url" placeholder="https://yoursite.com">
+          </div>
+        </div>
+        <div class="card-footer">
+          <span class="footer-hint">Shown on your public investor profile</span>
+          <button class="btn-save" onclick="showToast()">Save Changes →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════ PRIVACY PAGE ═══════════════ -->
+    <div class="settings-page" id="page-privacy">
+      <div class="page-header">
+        <div class="page-tag">Settings · Privacy</div>
+        <h1 class="page-title">Privacy &amp; Security</h1>
+        <p class="page-sub">Control who sees your data and how InvestIQ uses it.</p>
+      </div>
+
+      <!-- Profile Visibility -->
+      <div class="settings-card">
+        <div class="card-title"><div class="card-title-icon">👁️</div> Profile Visibility</div>
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <h4>Public Profile</h4>
+            <p>Allow others on InvestIQ to find and view your profile.</p>
+          </div>
+          <label class="toggle"><input type="checkbox" checked><span class="toggle-track"></span></label>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <h4>Show Portfolio Summary</h4>
+            <p>Display your overall investment performance on your public profile.</p>
+          </div>
+          <label class="toggle"><input type="checkbox"><span class="toggle-track"></span></label>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <h4>Show Watchlist</h4>
+            <p>Let others see the stocks and assets you are tracking.</p>
+          </div>
+          <label class="toggle"><input type="checkbox" checked><span class="toggle-track"></span></label>
+        </div>
+      </div>
+
+      <!-- Data & Analytics -->
+      <div class="settings-card" style="--card-accent: var(--sky);">
+        <div class="card-title"><div class="card-title-icon" style="background:rgba(56,191,255,0.1);">📡</div> Data &amp; Analytics</div>
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <h4>Usage Analytics</h4>
+            <p>Share anonymous usage data to help improve InvestIQ's AI models.</p>
+          </div>
+          <label class="toggle"><input type="checkbox" checked><span class="toggle-track"></span></label>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <h4>Personalised Recommendations</h4>
+            <p>Allow InvestIQ to analyse your behaviour to tailor investment suggestions.</p>
+          </div>
+          <label class="toggle"><input type="checkbox" checked><span class="toggle-track"></span></label>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <h4>Third-Party Data Sharing</h4>
+            <p>Permit sharing anonymised data with verified financial data partners.</p>
+          </div>
+          <label class="toggle"><input type="checkbox"><span class="toggle-track"></span></label>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <h4>Marketing Emails</h4>
+            <p>Receive promotional updates, market insights, and product announcements.</p>
+          </div>
+          <label class="toggle"><input type="checkbox" checked><span class="toggle-track"></span></label>
+        </div>
+      </div>
+
+      <!-- Active Sessions -->
+      <div class="settings-card" style="--card-accent: var(--emerald);">
+        <div class="card-title"><div class="card-title-icon" style="background:rgba(0,217,126,0.1);">💻</div> Active Sessions</div>
+        <div class="session-row">
+          <div class="session-info">
+            <div class="session-icon">🖥️</div>
+            <div class="session-detail">
+              <h5>Windows PC — Chrome <span class="session-current">Current</span></h5>
+              <p>Indore, India · Last active just now</p>
+            </div>
+          </div>
+        </div>
+        <div class="session-row">
+          <div class="session-info">
+            <div class="session-icon">📱</div>
+            <div class="session-detail">
+              <h5>Android · InvestIQ App</h5>
+              <p>Indore, India · Last active 3 hours ago</p>
+            </div>
+          </div>
+          <button class="btn-ghost-sm">Revoke</button>
+        </div>
+        <div class="session-row">
+          <div class="session-info">
+            <div class="session-icon">💻</div>
+            <div class="session-detail">
+              <h5>MacBook — Safari</h5>
+              <p>Mumbai, India · Last active 2 days ago</p>
+            </div>
+          </div>
+          <button class="btn-ghost-sm">Revoke</button>
+        </div>
+        <div class="card-footer">
+          <span class="footer-hint">Revoking a session will sign out that device immediately.</span>
+          <button class="btn-danger">Revoke All Other Sessions</button>
+        </div>
+      </div>
+
+      <!-- Data Export -->
+      <div class="settings-card">
+        <div class="card-title"><div class="card-title-icon">📦</div> Your Data</div>
+        <div class="toggle-row" style="border:none; padding-bottom:0;">
+          <div class="toggle-info">
+            <h4>Export My Data</h4>
+            <p>Download a copy of all your data stored on InvestIQ, including transactions, predictions, and profile info.</p>
+          </div>
+          <button class="btn-ghost-sm" onclick="showToast()">Export ZIP</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════ PREFERENCES PAGE ═══════════════ -->
+    <div class="settings-page" id="page-preferences">
+      <div class="page-header">
+        <div class="page-tag">Settings · Preferences</div>
+        <h1 class="page-title">Investment Preferences</h1>
+        <p class="page-sub">Tune InvestIQ's AI to match your unique financial goals and appetite.</p>
+      </div>
+
+      <!-- Investment Amount -->
+      <div class="settings-card">
+        <div class="card-title"><div class="card-title-icon">💰</div> Investment Budget</div>
+        <div class="form-grid">
+          <div class="field">
+            <label class="field-label">Monthly Investment Amount</label>
+            <div class="amount-wrap">
+              <span class="amount-prefix">₹</span>
+              <input class="field-input amount-input" type="number" value="25000" min="0" placeholder="0">
+            </div>
+          </div>
+          <div class="field">
+            <label class="field-label">Total Investable Capital</label>
+            <div class="amount-wrap">
+              <span class="amount-prefix">₹</span>
+              <input class="field-input amount-input" type="number" value="500000" min="0" placeholder="0">
+            </div>
+          </div>
+          <div class="field">
+            <label class="field-label">Maximum Acceptable Loss (%)</label>
+            <input class="field-input" type="number" value="15" min="0" max="100" placeholder="0–100">
+          </div>
+          <div class="field">
+            <label class="field-label">Target Annual Return (%)</label>
+            <input class="field-input" type="number" value="18" min="0" placeholder="Expected %">
+          </div>
+        </div>
+        <div class="card-footer">
+          <span class="footer-hint">Used by the AI to calibrate predictions and portfolio sizing.</span>
+          <button class="btn-save" onclick="showToast()">Save Budget →</button>
+        </div>
+      </div>
+
+      <!-- Preferred Asset Types -->
+      <div class="settings-card" style="--card-accent: var(--sky);">
+        <div class="card-title"><div class="card-title-icon" style="background:rgba(56,191,255,0.1);">📈</div> Preferred Investment Types</div>
+        <p style="color:var(--muted);font-size:0.85rem;margin-bottom:0.8rem;">Select all asset classes you want InvestIQ to include in recommendations.</p>
+        <div class="pill-group" id="assetPills">
+          <div class="pill selected" onclick="togglePill(this)">📉 Equities / Stocks</div>
+          <div class="pill selected" onclick="togglePill(this)">🏦 Mutual Funds</div>
+          <div class="pill" onclick="togglePill(this)">🥇 Gold / Commodities</div>
+          <div class="pill" onclick="togglePill(this)">🏠 Real Estate</div>
+          <div class="pill selected" onclick="togglePill(this)">₿ Crypto</div>
+          <div class="pill" onclick="togglePill(this)">🏛️ Government Bonds</div>
+          <div class="pill" onclick="togglePill(this)">🏢 REITs</div>
+          <div class="pill selected" onclick="togglePill(this)">💵 Fixed Deposits</div>
+          <div class="pill" onclick="togglePill(this)">🌍 International ETFs</div>
+          <div class="pill" onclick="togglePill(this)">⚡ F&amp;O (Futures &amp; Options)</div>
+        </div>
+        <div class="card-footer">
+          <span class="footer-hint">AI will only suggest assets from your selected types.</span>
+          <button class="btn-save" onclick="showToast()">Save Types →</button>
+        </div>
+      </div>
+
+      <!-- Investment Goals -->
+      <div class="settings-card" style="--card-accent: var(--emerald);">
+        <div class="card-title"><div class="card-title-icon" style="background:rgba(0,217,126,0.1);">🎯</div> Investment Goals</div>
+        <p style="color:var(--muted);font-size:0.85rem;margin-bottom:0.8rem;">Choose one or more goals that drive your investment strategy.</p>
+        <div class="pill-group" id="goalPills">
+          <div class="pill selected" onclick="togglePillColor(this,'emerald')">📈 Wealth Growth</div>
+          <div class="pill" onclick="togglePillColor(this,'emerald')">💸 Passive Income</div>
+          <div class="pill selected" onclick="togglePillColor(this,'emerald')">🏦 Retirement Savings</div>
+          <div class="pill" onclick="togglePillColor(this,'emerald')">🏠 Buy a Home</div>
+          <div class="pill" onclick="togglePillColor(this,'emerald')">📚 Education Fund</div>
+          <div class="pill selected" onclick="togglePillColor(this,'emerald')">⚡ Short-Term Gains</div>
+          <div class="pill" onclick="togglePillColor(this,'emerald')">🌐 Portfolio Diversification</div>
+          <div class="pill" onclick="togglePillColor(this,'emerald')">🛡️ Capital Preservation</div>
+        </div>
+        <div class="form-grid" style="margin-top:1.2rem;">
+          <div class="field">
+            <label class="field-label">Investment Horizon</label>
+            <select class="field-input">
+              <option>Short-Term (under 1 year)</option>
+              <option selected>Mid-Term (1–5 years)</option>
+              <option>Long-Term (5+ years)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="field-label">Preferred Market Focus</label>
+            <select class="field-input">
+              <option selected>Indian Markets (NSE / BSE)</option>
+              <option>US Markets (NYSE / NASDAQ)</option>
+              <option>Global Diversified</option>
+            </select>
+          </div>
+        </div>
+        <div class="card-footer">
+          <span class="footer-hint">Goals shape the AI model's risk-return optimisation.</span>
+          <button class="btn-save" onclick="showToast()">Save Goals →</button>
+        </div>
+      </div>
+
+      <!-- Risk Tolerance -->
+      <div class="settings-card" style="--card-accent: var(--coral);">
+        <div class="card-title"><div class="card-title-icon" style="background:rgba(255,107,107,0.1);">⚖️</div> Risk Tolerance</div>
+        <p style="color:var(--muted);font-size:0.85rem;margin-bottom:1.2rem;">Slide to indicate how much portfolio volatility you're comfortable with.</p>
+        <div class="risk-slider-wrap">
+          <div class="risk-labels">
+            <span>Conservative</span>
+            <span>Moderate</span>
+            <span>Aggressive</span>
+          </div>
+          <input type="range" class="risk-slider" id="riskSlider" min="1" max="3" step="1" value="2" oninput="updateRisk(this.value)">
+          <div>
+            <span class="risk-value-badge risk-medium" id="riskBadge">Moderate Risk</span>
+          </div>
+        </div>
+        <div class="form-grid" style="margin-top:1.4rem;">
+          <div class="field">
+            <label class="field-label">Max Single Stock Allocation (%)</label>
+            <input class="field-input" type="number" value="20" min="1" max="100">
+          </div>
+          <div class="field">
+            <label class="field-label">Stop-Loss Threshold (%)</label>
+            <input class="field-input" type="number" value="10" min="1" max="100">
+          </div>
+        </div>
+        <div class="card-footer">
+          <span class="footer-hint">Risk profile feeds directly into LSTM &amp; ensemble model outputs.</span>
+          <button class="btn-save" onclick="showToast()">Save Risk Profile →</button>
+        </div>
+      </div>
+
+      <!-- Sector Preferences -->
+      <div class="settings-card">
+        <div class="card-title"><div class="card-title-icon">🏭</div> Sector Preferences</div>
+        <p style="color:var(--muted);font-size:0.85rem;margin-bottom:0.8rem;">Highlight sectors you want to overweight in your portfolio.</p>
+        <div class="pill-group">
+          <div class="pill selected" onclick="togglePill(this)">💻 Information Technology</div>
+          <div class="pill selected" onclick="togglePill(this)">🏦 Banking &amp; Finance</div>
+          <div class="pill" onclick="togglePill(this)">⚕️ Healthcare &amp; Pharma</div>
+          <div class="pill" onclick="togglePill(this)">⚡ Energy &amp; Power</div>
+          <div class="pill selected" onclick="togglePill(this)">🛒 Consumer Goods</div>
+          <div class="pill" onclick="togglePill(this)">🚗 Automobile</div>
+          <div class="pill" onclick="togglePill(this)">📡 Telecom &amp; Media</div>
+          <div class="pill" onclick="togglePill(this)">🏗️ Infrastructure</div>
+          <div class="pill" onclick="togglePill(this)">🌿 ESG / Green Energy</div>
+        </div>
+        <div class="card-footer">
+          <span class="footer-hint">Sector weight influences both watchlist rankings and AI alerts.</span>
+          <button class="btn-save" onclick="showToast()">Save Sectors →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════ NOTIFICATIONS PAGE ═══════════════ -->
+    <div class="settings-page" id="page-notifications">
+      <div class="page-header">
+        <div class="page-tag">Settings · Notifications</div>
+        <h1 class="page-title">Notifications</h1>
+        <p class="page-sub">Choose when and how InvestIQ should reach you.</p>
+      </div>
+
+      <div class="settings-card">
+        <div class="card-title"><div class="card-title-icon">📧</div> Email Notifications</div>
+        <div class="toggle-row">
+          <div class="toggle-info"><h4>Daily Market Digest</h4><p>A morning summary of your watchlist and key market movers.</p></div>
+          <label class="toggle"><input type="checkbox" checked><span class="toggle-track"></span></label>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-info"><h4>AI Prediction Alerts</h4><p>Get notified when a prediction confidence crosses your threshold.</p></div>
+          <label class="toggle"><input type="checkbox" checked><span class="toggle-track"></span></label>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-info"><h4>Portfolio Risk Warnings</h4><p>Email alerts when your exposure exceeds the max-loss limit.</p></div>
+          <label class="toggle"><input type="checkbox"><span class="toggle-track"></span></label>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-info"><h4>Weekly Performance Report</h4><p>A week-in-review of your portfolio's P&amp;L and model accuracy.</p></div>
+          <label class="toggle"><input type="checkbox" checked><span class="toggle-track"></span></label>
+        </div>
+      </div>
+
+      <div class="settings-card" style="--card-accent:var(--sky);">
+        <div class="card-title"><div class="card-title-icon" style="background:rgba(56,191,255,0.1);">📲</div> Push Notifications</div>
+        <div class="toggle-row">
+          <div class="toggle-info"><h4>Price Alerts</h4><p>Instant push when a stock hits your target or stop-loss price.</p></div>
+          <label class="toggle"><input type="checkbox" checked><span class="toggle-track"></span></label>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-info"><h4>Breaking News</h4><p>Market-moving news for stocks in your watchlist.</p></div>
+          <label class="toggle"><input type="checkbox"><span class="toggle-track"></span></label>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-info"><h4>Trade Execution Confirmations</h4><p>Notify when a simulated or actual trade is logged.</p></div>
+          <label class="toggle"><input type="checkbox" checked><span class="toggle-track"></span></label>
+        </div>
+      </div>
+
+      <div class="settings-card">
+        <div class="card-title"><div class="card-title-icon">⏰</div> Quiet Hours</div>
+        <div class="form-grid">
+          <div class="field">
+            <label class="field-label">Do Not Disturb From</label>
+            <input class="field-input" type="time" value="22:00">
+          </div>
+          <div class="field">
+            <label class="field-label">Do Not Disturb Until</label>
+            <input class="field-input" type="time" value="07:00">
+          </div>
+        </div>
+        <div class="card-footer">
+          <span class="footer-hint">Notifications will be queued and delivered after quiet hours end.</span>
+          <button class="btn-save" onclick="showToast()">Save Notifications →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════ SECURITY PAGE ═══════════════ -->
+    <div class="settings-page" id="page-security">
+      <div class="page-header">
+        <div class="page-tag">Settings · Security</div>
+        <h1 class="page-title">Security</h1>
+        <p class="page-sub">Keep your account and investment data safe.</p>
+      </div>
+
+      <div class="settings-card">
+        <div class="card-title"><div class="card-title-icon">🔑</div> Change Password</div>
+        <div class="form-grid full">
+          <div class="field">
+            <label class="field-label">Current Password</label>
+            <input class="field-input" type="password" placeholder="••••••••">
+          </div>
+          <div class="field">
+            <label class="field-label">New Password</label>
+            <input class="field-input" type="password" id="newPw" placeholder="••••••••" oninput="checkPwStrength(this.value)">
+            <div class="pw-strength">
+              <div class="pw-bar" id="pwb1"></div>
+              <div class="pw-bar" id="pwb2"></div>
+              <div class="pw-bar" id="pwb3"></div>
+            </div>
+          </div>
+          <div class="field">
+            <label class="field-label">Confirm New Password</label>
+            <input class="field-input" type="password" placeholder="••••••••">
+          </div>
+        </div>
+        <div class="card-footer">
+          <span class="footer-hint">Use 8+ characters with a mix of letters, numbers &amp; symbols.</span>
+          <button class="btn-save" onclick="showToast()">Update Password →</button>
+        </div>
+      </div>
+
+      <div class="settings-card" style="--card-accent:var(--emerald);">
+        <div class="card-title"><div class="card-title-icon" style="background:rgba(0,217,126,0.1);">🔐</div> Two-Factor Authentication</div>
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <h4>Enable 2FA &nbsp;<span class="badge badge-emerald">Recommended</span></h4>
+            <p>Add a second layer of protection via authenticator app or SMS OTP.</p>
+          </div>
+          <label class="toggle"><input type="checkbox"><span class="toggle-track"></span></label>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <h4>Login Alerts</h4>
+            <p>Email me whenever a new device or location signs into my account.</p>
+          </div>
+          <label class="toggle"><input type="checkbox" checked><span class="toggle-track"></span></label>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════ ACCOUNT PAGE ═══════════════ -->
+    <div class="settings-page" id="page-account">
+      <div class="page-header">
+        <div class="page-tag">Settings · Account</div>
+        <h1 class="page-title">Account Settings</h1>
+        <p class="page-sub">Manage your login credentials and account details.</p>
+      </div>
+
+      <div class="settings-card">
+        <div class="card-title"><div class="card-title-icon" style="background:rgba(56,191,255,0.1);">📋</div> Account Details</div>
+        <div class="info-row">
+          <span class="info-key">Username</span>
+          <span class="info-val">nikita_investiq</span>
+        </div>
+        <div class="info-row">
+          <span class="info-key">Account ID</span>
+          <span class="info-val" style="color: var(--gold);">INV-12345</span>
+        </div>
+        <div class="info-row">
+          <span class="info-key">Member Since</span>
+          <span class="info-val">January 2025</span>
+        </div>
+        <div class="info-row">
+          <span class="info-key">Plan</span>
+          <span class="info-val" style="color: var(--gold);">⭐ Premium</span>
+        </div>
+      </div>
+
+      <div class="settings-card" style="--card-accent: var(--emerald);">
+        <div class="card-title"><div class="card-title-icon" style="background:rgba(0,217,126,0.1);">🔐</div> Change Password</div>
+        <div class="form-grid full">
+          <div class="field">
+            <label class="field-label">Current Password</label>
+            <input class="field-input" type="password" placeholder="Enter current password">
+          </div>
+          <div class="field">
+            <label class="field-label">New Password</label>
+            <input class="field-input" type="password" placeholder="Enter new password" id="acctNewPw" oninput="checkPwStrength(this.value)">
+            <div class="pw-strength">
+              <div class="pw-bar" id="pwb1"></div>
+              <div class="pw-bar" id="pwb2"></div>
+              <div class="pw-bar" id="pwb3"></div>
+            </div>
+          </div>
+          <div class="field">
+            <label class="field-label">Confirm Password</label>
+            <input class="field-input" type="password" placeholder="Re-enter new password">
+          </div>
+        </div>
+        <div class="card-footer">
+          <span class="footer-hint">Use 8+ characters with a mix of letters, numbers &amp; symbols.</span>
+          <button class="btn-save" onclick="showToast()">Update Password →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════ APPEARANCE PAGE ═══════════════ -->
+    <div class="settings-page" id="page-appearance">
+      <div class="page-header">
+        <div class="page-tag">Settings · Appearance</div>
+        <h1 class="page-title">Appearance</h1>
+        <p class="page-sub">Customize the look and feel of InvestIQ.</p>
+      </div>
+
+      <div class="settings-card">
+        <div class="card-title"><div class="card-title-icon">🌓</div> Theme</div>
+        <div class="theme-options">
+          <label class="theme-option selected" id="theme-dark">
+            <input type="radio" name="theme" value="dark" checked style="display:none;">
+            <span class="theme-preview" style="background: var(--bg); border-color: var(--gold);">
+              <span style="background: var(--gold); width: 16px; height: 3px; border-radius: 2px; display: block; margin-bottom: 4px;"></span>
+              <span style="background: var(--muted); width: 24px; height: 2px; border-radius: 2px; display: block; margin-bottom: 3px;"></span>
+              <span style="background: rgba(255,255,255,0.1); width: 20px; height: 2px; border-radius: 2px; display: block;"></span>
+            </span>
+            <span class="theme-name">Dark Mode</span>
+          </label>
+          <label class="theme-option" id="theme-light">
+            <input type="radio" name="theme" value="light" style="display:none;">
+            <span class="theme-preview" style="background: #f0f2f5; border-color: var(--border);">
+              <span style="background: var(--gold); width: 16px; height: 3px; border-radius: 2px; display: block; margin-bottom: 4px;"></span>
+              <span style="background: #999; width: 24px; height: 2px; border-radius: 2px; display: block; margin-bottom: 3px;"></span>
+              <span style="background: rgba(0,0,0,0.08); width: 20px; height: 2px; border-radius: 2px; display: block;"></span>
+            </span>
+            <span class="theme-name">Light Mode</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="settings-card" style="--card-accent: var(--sky);">
+        <div class="card-title"><div class="card-title-icon" style="background:rgba(56,191,255,0.1);">📏</div> Display</div>
+        <div class="form-grid">
+          <div class="field">
+            <label class="field-label">Font Size</label>
+            <select class="field-input">
+              <option>Small</option>
+              <option selected>Medium</option>
+              <option>Large</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="field-label">Currency Display</label>
+            <select class="field-input">
+              <option selected>₹ INR</option>
+              <option>$ USD</option>
+              <option>€ EUR</option>
+              <option>£ GBP</option>
+            </select>
+          </div>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <h4>Compact Mode</h4>
+            <p>Show more data in less space</p>
+          </div>
+          <label class="toggle"><input type="checkbox"><span class="toggle-track"></span></label>
+        </div>
+        <div class="card-footer">
+          <span class="footer-hint">Changes apply immediately across InvestIQ.</span>
+          <button class="btn-save" onclick="showToast()">Save Appearance →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════ HELP PAGE ═══════════════ -->
+    <div class="settings-page" id="page-help">
+      <div class="page-header">
+        <div class="page-tag">Settings · Help</div>
+        <h1 class="page-title">Help &amp; Support</h1>
+        <p class="page-sub">Get assistance with InvestIQ features and services.</p>
+      </div>
+
+      <div class="settings-card" style="--card-accent: var(--emerald);">
+        <div class="card-title"><div class="card-title-icon" style="background:rgba(0,217,126,0.1);">📞</div> Contact Us</div>
+        <div class="info-row">
+          <span class="info-key">Email</span>
+          <span class="info-val" style="color: var(--gold);">support@investiq.com</span>
+        </div>
+        <div class="info-row">
+          <span class="info-key">Phone</span>
+          <span class="info-val">+91 1800-INVEST</span>
+        </div>
+        <div class="info-row">
+          <span class="info-key">Hours</span>
+          <span class="info-val">Mon–Fri, 9 AM – 6 PM IST</span>
+        </div>
+      </div>
+
+      <div class="settings-card" style="--card-accent: var(--sky);">
+        <div class="card-title"><div class="card-title-icon" style="background:rgba(56,191,255,0.1);">📚</div> Quick Links</div>
+        <div class="help-links">
+          <a href="#" class="help-link-item">
+            <span>📖</span>
+            <div><strong>Documentation</strong><p>Learn how to use all InvestIQ features</p></div>
+            <span class="help-arrow">→</span>
+          </a>
+          <a href="#" class="help-link-item">
+            <span>🎓</span>
+            <div><strong>Video Tutorials</strong><p>Watch step-by-step guides</p></div>
+            <span class="help-arrow">→</span>
+          </a>
+          <a href="chatbot.html" class="help-link-item">
+            <span>💬</span>
+            <div><strong>Chat with AI</strong><p>Get instant help from our AI assistant</p></div>
+            <span class="help-arrow">→</span>
+          </a>
+          <a href="#" class="help-link-item">
+            <span>🐛</span>
+            <div><strong>Report a Bug</strong><p>Let us know if something isn't working</p></div>
+            <span class="help-arrow">→</span>
+          </a>
+        </div>
+      </div>
+
+      <div class="settings-card">
+        <div class="card-title"><div class="card-title-icon" style="background:rgba(255,255,255,0.05);">ℹ️</div> About InvestIQ</div>
+        <div class="info-row">
+          <span class="info-key">Version</span>
+          <span class="info-val">2.1.0</span>
+        </div>
+        <div class="info-row">
+          <span class="info-key">Last Updated</span>
+          <span class="info-val">March 2026</span>
+        </div>
+        <div class="info-row">
+          <span class="info-key">License</span>
+          <span class="info-val">Premium</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════ DANGER ZONE PAGE ═══════════════ -->
+    <div class="settings-page" id="page-danger">
+      <div class="page-header">
+        <div class="page-tag" style="color:var(--coral);">Settings · Danger Zone</div>
+        <h1 class="page-title">Danger Zone</h1>
+        <p class="page-sub">Irreversible actions. Please read carefully before proceeding.</p>
+      </div>
+
+      <div class="settings-card" style="--card-accent:var(--coral); border-color: rgba(255,107,107,0.15);">
+        <div class="card-title"><div class="card-title-icon" style="background:rgba(255,107,107,0.1);">🗑️</div> Delete Account</div>
+        <p style="color:var(--muted);font-size:0.9rem;line-height:1.7;margin-bottom:1.2rem;">Permanently delete your InvestIQ account and all associated data — predictions, portfolio history, watchlists, and personal info. <strong style="color:var(--coral)">This action cannot be undone.</strong></p>
+        <div class="field" style="max-width:400px;">
+          <label class="field-label">Type <em>DELETE</em> to confirm</label>
+          <input class="field-input" type="text" id="deleteConfirm" placeholder="DELETE" oninput="checkDelete(this.value)">
+        </div>
+        <div class="card-footer">
+          <span class="footer-hint">All data will be permanently erased within 30 days.</span>
+          <button class="btn-danger" id="deleteBtn" disabled>Delete My Account</button>
+        </div>
+      </div>
+
+      <div class="settings-card" style="--card-accent:var(--gold);">
+        <div class="card-title"><div class="card-title-icon">🔄</div> Reset Preferences</div>
+        <p style="color:var(--muted);font-size:0.9rem;line-height:1.7;margin-bottom:1.2rem;">Reset all investment preferences, goals, and risk settings to their default values. Your profile and account data will not be affected.</p>
+        <div class="card-footer">
+          <span class="footer-hint">Preferences can be reconfigured at any time after reset.</span>
+          <button class="btn-danger" onclick="showToast()">Reset Preferences</button>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+  // ── PAGE SWITCHING ───────────────────────────────
+  function switchPage(id, el) {
+    document.querySelectorAll('.settings-page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.sidebar-item').forEach(s => s.classList.remove('active'));
+    document.getElementById('page-' + id).classList.add('active');
+    el.classList.add('active');
+  }
+
+  // ── TOAST ────────────────────────────────────────
+  function showToast() {
+    const t = document.getElementById('saveToast');
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2800);
+  }
+
+  // ── PILL TOGGLE ──────────────────────────────────
+  function togglePill(el) {
+    el.classList.toggle('selected');
+  }
+
+  function togglePillColor(el, color) {
+    el.classList.toggle('selected-' + color);
+    el.classList.remove('selected');
+    if (!el.classList.contains('selected-' + color)) {
+      // was active, now off - nothing else needed
+    }
+  }
+
+  // ── RISK SLIDER ──────────────────────────────────
+  function updateRisk(val) {
+    const badge = document.getElementById('riskBadge');
+    const labels = ['', 'Low Risk', 'Moderate Risk', 'High Risk'];
+    const classes = ['', 'risk-low', 'risk-medium', 'risk-high'];
+    badge.textContent = labels[val];
+    badge.className = 'risk-value-badge ' + classes[val];
+  }
+
+  // ── PASSWORD STRENGTH ────────────────────────────
+  function checkPwStrength(val) {
+    const bars = [document.getElementById('pwb1'), document.getElementById('pwb2'), document.getElementById('pwb3')];
+    bars.forEach(b => b.className = 'pw-bar');
+    if (!val) return;
+    if (val.length >= 4) bars[0].classList.add('weak');
+    if (val.length >= 8) bars[1].classList.add('medium');
+    if (val.length >= 12 && /[^a-zA-Z0-9]/.test(val)) bars[2].classList.add('strong');
+    else if (val.length >= 8) {
+      bars[0].classList.replace('weak', 'medium');
+      bars[1].classList.add('medium');
+    }
+  }
+
+  // ── DELETE CONFIRM ───────────────────────────────
+  function checkDelete(val) {
+    document.getElementById('deleteBtn').disabled = (val !== 'DELETE');
+  }
+
+  // ── HASH-BASED ROUTING (optional deep links) ─────
+  function routeFromHash() {
+    const map = { '#profile': 'profile', '#privacy': 'privacy', '#account': 'account', '#preferences': 'preferences', '#notifications': 'notifications', '#security': 'security', '#appearance': 'appearance', '#help': 'help', '#danger': 'danger' };
+    const target = map[window.location.hash];
+    if (target) {
+      const el = document.querySelector(`.sidebar-item[onclick*="'${target}'"]`);
+      if (el) switchPage(target, el);
+    }
+  }
+
+  window.addEventListener('hashchange', routeFromHash);
+  document.addEventListener('DOMContentLoaded', routeFromHash);
+
+  // ── THEME TOGGLE ──────────────────────────────────
+  document.querySelectorAll('.theme-option').forEach(opt => {
+    opt.addEventListener('click', function() {
+      document.querySelectorAll('.theme-option').forEach(o => o.classList.remove('selected'));
+      this.classList.add('selected');
+    });
+  });
+</script>
+</body>
+</html>

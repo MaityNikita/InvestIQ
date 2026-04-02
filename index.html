@@ -2000,10 +2000,298 @@
     .email-banner-success.visible {
       display: block;
     }
+    /* ── PROFILE MODAL ── */
+    .profile-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 25000;
+      background: rgba(6, 10, 18, 0.92);
+      backdrop-filter: blur(16px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      opacity: 0;
+      pointer-events: none;
+      visibility: hidden;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+    .profile-overlay.open {
+      opacity: 1;
+      pointer-events: all;
+      visibility: visible;
+    }
+    .profile-modal {
+      background: var(--bg2);
+      border: 1px solid rgba(245, 200, 66, 0.2);
+      border-radius: 28px;
+      max-width: 580px;
+      width: 100%;
+      max-height: 85vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 40px 100px rgba(0, 0, 0, 0.7);
+      transform: translateY(24px) scale(0.97);
+      transition: transform 0.3s ease;
+      overflow: hidden;
+    }
+    .profile-overlay.open .profile-modal {
+      transform: translateY(0) scale(1);
+    }
+    .profile-modal-header {
+      padding: 1.6rem 2rem 1.2rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--bg3);
+    }
+    .profile-modal-header h2 {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.15rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+    .profile-modal-body {
+      overflow-y: auto;
+      padding: 1.8rem 2rem;
+      flex: 1;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(245, 200, 66, 0.3) transparent;
+    }
+    .profile-modal-body::-webkit-scrollbar { width: 4px; }
+    .profile-modal-body::-webkit-scrollbar-thumb { background: rgba(245,200,66,0.3); border-radius: 10px; }
+    .pm-avatar-row {
+      display: flex;
+      align-items: center;
+      gap: 1.2rem;
+      margin-bottom: 1.8rem;
+    }
+    .pm-avatar {
+      width: 72px; height: 72px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--gold), var(--emerald));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Syne', sans-serif;
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: var(--bg);
+      flex-shrink: 0;
+    }
+    .pm-avatar-info h3 {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+    .pm-avatar-info p {
+      color: var(--muted);
+      font-size: 0.82rem;
+      margin-top: 0.2rem;
+    }
+    .pm-section-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin: 1.4rem 0 0.7rem;
+    }
+    .pm-form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.8rem;
+    }
+    .pm-field {
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+    }
+    .pm-field.full { grid-column: 1 / -1; }
+    .pm-field label {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--muted);
+    }
+    .pm-field input, .pm-field textarea, .pm-field select {
+      width: 100%;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.65rem 0.9rem;
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.88rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .pm-field input:focus, .pm-field textarea:focus {
+      border-color: rgba(245, 200, 66, 0.5);
+    }
+    .pm-field textarea {
+      resize: vertical;
+      min-height: 60px;
+    }
+    .pm-field select {
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%237A8BA0' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 0.8rem center;
+      padding-right: 2rem;
+    }
+    .profile-modal-footer {
+      padding: 1rem 2rem;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--bg3);
+    }
+    .pm-save-btn {
+      background: linear-gradient(135deg, var(--gold), #E8A800);
+      color: var(--bg);
+      border: none;
+      border-radius: 100px;
+      padding: 0.6rem 1.6rem;
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 700;
+      font-size: 0.88rem;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .pm-save-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(245, 200, 66, 0.35);
+    }
+    .pm-cancel-btn {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      color: var(--muted);
+      padding: 0.6rem 1.2rem;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.82rem;
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s;
+    }
+    .pm-cancel-btn:hover { border-color: rgba(255,255,255,0.2); color: var(--text); }
+    .pm-toast {
+      position: fixed;
+      bottom: 2rem; right: 2rem;
+      background: var(--bg2);
+      border: 1px solid rgba(0,217,126,0.3);
+      border-radius: 14px;
+      padding: 0.8rem 1.3rem;
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--emerald);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+      z-index: 30000;
+      transform: translateY(20px);
+      opacity: 0;
+      transition: transform 0.3s, opacity 0.3s;
+      pointer-events: none;
+    }
+    .pm-toast.show { transform: translateY(0); opacity: 1; }
+    @media (max-width: 600px) {
+      .profile-modal { border-radius: 20px; }
+      .profile-modal-body { padding: 1.2rem; }
+      .pm-form-grid { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 
 <body>
+
+  <!-- ═══ PROFILE MODAL ═══ -->
+  <div class="profile-overlay" id="profileOverlay" onclick="if(event.target===this)closeProfile()">
+    <div class="profile-modal">
+      <div class="profile-modal-header">
+        <h2>👤 Profile Settings</h2>
+        <button onclick="closeProfile()" style="background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:50%;width:34px;height:34px;cursor:pointer;color:var(--muted);font-size:1rem;display:flex;align-items:center;justify-content:center;transition:all 0.2s" onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--muted)'">✕</button>
+      </div>
+      <div class="profile-modal-body">
+        <div class="pm-avatar-row">
+          <div class="pm-avatar" id="pmAvatar">?</div>
+          <div class="pm-avatar-info">
+            <h3 id="pmDisplayName">User</h3>
+            <p id="pmEmail">—</p>
+          </div>
+        </div>
+
+        <div class="pm-section-label">Personal Information</div>
+        <div class="pm-form-grid">
+          <div class="pm-field">
+            <label>First Name</label>
+            <input type="text" id="pmFirstName" placeholder="First name">
+          </div>
+          <div class="pm-field">
+            <label>Last Name</label>
+            <input type="text" id="pmLastName" placeholder="Last name">
+          </div>
+          <div class="pm-field">
+            <label>Display Name</label>
+            <input type="text" id="pmDisplayNameInput" placeholder="How you appear">
+          </div>
+          <div class="pm-field">
+            <label>Date of Birth</label>
+            <input type="date" id="pmDob">
+          </div>
+          <div class="pm-field full">
+            <label>Bio</label>
+            <textarea id="pmBio" placeholder="Tell us about yourself…"></textarea>
+          </div>
+        </div>
+
+        <div class="pm-section-label">Contact Information</div>
+        <div class="pm-form-grid">
+          <div class="pm-field">
+            <label>Email Address</label>
+            <input type="email" id="pmEmailInput" placeholder="your@email.com">
+          </div>
+          <div class="pm-field">
+            <label>Phone Number</label>
+            <input type="tel" id="pmPhone" placeholder="+91 XXXXX XXXXX">
+          </div>
+          <div class="pm-field">
+            <label>City</label>
+            <input type="text" id="pmCity" placeholder="Your city">
+          </div>
+          <div class="pm-field">
+            <label>Country</label>
+            <select id="pmCountry">
+              <option value="IN" selected>India</option>
+              <option value="US">United States</option>
+              <option value="UK">United Kingdom</option>
+              <option value="SG">Singapore</option>
+              <option value="AE">UAE</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="pm-section-label">Social Links</div>
+        <div class="pm-form-grid">
+          <div class="pm-field">
+            <label>LinkedIn</label>
+            <input type="url" id="pmLinkedin" placeholder="https://linkedin.com/in/…">
+          </div>
+          <div class="pm-field">
+            <label>GitHub</label>
+            <input type="url" id="pmGithub" placeholder="https://github.com/…">
+          </div>
+        </div>
+      </div>
+      <div class="profile-modal-footer">
+        <button class="pm-cancel-btn" onclick="closeProfile()">Cancel</button>
+        <button class="pm-save-btn" onclick="saveProfile()">Save Changes →</button>
+      </div>
+    </div>
+  </div>
+  <div class="pm-toast" id="pmToast">✓ Profile saved successfully</div>
 
   <!-- ═══════════════════════════════════════ AUTH MODAL ═══════════════════════════════════════ -->
   <div class="auth-overlay" id="authOverlay" onclick="_overlayClose(event,'authOverlay')">
@@ -2073,6 +2361,8 @@
       <li><a href="#demo">Demo</a></li>
       <li><a href="#how">How it Works</a></li>
       <li><a href="#team">Team</a></li>
+      <li><a href="live.html">Live Dashboard</a></li>
+      <li><a href="settings.html">Settings</a></li>
     </ul>
     <div class="nav-auth" id="navAuth">
       <!-- Guest state -->
@@ -2082,7 +2372,7 @@
           Up</button>
       </div>
       <!-- Logged-in state (hidden until auth) -->
-      <div class="nav-user-chip" id="navUser">
+      <div class="nav-user-chip" id="navUser" onclick="openProfile()" style="cursor:pointer" title="Profile Settings">
         <div class="nav-user-avatar" id="navAvatar">?</div>
         <span id="navName">User</span>
       </div>
@@ -3064,6 +3354,54 @@
       });
     });
 
+    // ── Profile Modal ─────────────────────────────────────────
+    function openProfile() {
+      const user = _getUser();
+      if (!user) { openAuth('login'); return; }
+      const profile = JSON.parse(localStorage.getItem('iq_profile') || '{}');
+      document.getElementById('pmAvatar').textContent = user.name.charAt(0).toUpperCase();
+      document.getElementById('pmDisplayName').textContent = user.name;
+      document.getElementById('pmEmail').textContent = user.email;
+      const names = user.name.split(' ');
+      document.getElementById('pmFirstName').value = profile.firstName || names[0] || '';
+      document.getElementById('pmLastName').value = profile.lastName || names.slice(1).join(' ') || '';
+      document.getElementById('pmDisplayNameInput').value = profile.displayName || user.name;
+      document.getElementById('pmDob').value = profile.dob || '';
+      document.getElementById('pmBio').value = profile.bio || '';
+      document.getElementById('pmEmailInput').value = profile.email || user.email;
+      document.getElementById('pmPhone').value = profile.phone || '';
+      document.getElementById('pmCity').value = profile.city || '';
+      document.getElementById('pmCountry').value = profile.country || 'IN';
+      document.getElementById('pmLinkedin').value = profile.linkedin || '';
+      document.getElementById('pmGithub').value = profile.github || '';
+      document.getElementById('profileOverlay').classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeProfile() {
+      document.getElementById('profileOverlay').classList.remove('open');
+      document.body.style.overflow = '';
+    }
+    function saveProfile() {
+      const profile = {
+        firstName: document.getElementById('pmFirstName').value.trim(),
+        lastName: document.getElementById('pmLastName').value.trim(),
+        displayName: document.getElementById('pmDisplayNameInput').value.trim(),
+        dob: document.getElementById('pmDob').value,
+        bio: document.getElementById('pmBio').value.trim(),
+        email: document.getElementById('pmEmailInput').value.trim(),
+        phone: document.getElementById('pmPhone').value.trim(),
+        city: document.getElementById('pmCity').value.trim(),
+        country: document.getElementById('pmCountry').value,
+        linkedin: document.getElementById('pmLinkedin').value.trim(),
+        github: document.getElementById('pmGithub').value.trim(),
+      };
+      localStorage.setItem('iq_profile', JSON.stringify(profile));
+      closeProfile();
+      const toast = document.getElementById('pmToast');
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2500);
+    }
+
     // Synopsis modal
     function openSynopsis() {
       document.getElementById('synopsisOverlay').classList.add('open');
@@ -3083,7 +3421,7 @@
       document.getElementById('syn-' + panel).classList.add('active');
     }
     document.addEventListener('keydown', e => {
-      if (e.key === 'Escape') { closeAuth(); closeSynopsis(); }
+      if (e.key === 'Escape') { closeAuth(); closeSynopsis(); closeProfile(); }
     });
 
     // Scroll reveal

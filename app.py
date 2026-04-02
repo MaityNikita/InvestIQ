@@ -111,9 +111,26 @@ def index():
     return send_from_directory(".", "index.html")
 
 
+@app.route("/live")
+def live_page():
+    """Serve the live dashboard."""
+    return send_from_directory(".", "live.html")
+
+
+@app.route("/settings")
+def settings_page():
+    """Serve the settings page."""
+    return send_from_directory(".", "settings.html")
+
+
 @app.route("/chatbot")
 def chatbot_page():
     return send_from_directory(".", "chatbot.html")
+
+
+@app.route("/graph")
+def graph_page():
+    return send_from_directory(".", "graph.html")
 
 
 @app.route("/health")
@@ -628,6 +645,170 @@ def _rule_nlp(msg: str):
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
+#  LIVE DATA API ENDPOINTS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# All tracked stocks (matches the live dashboard)
+LIVE_TICKERS = {
+    "Tata Consultancy":  "TCS.NS",
+    "Infosys Limited":   "INFY.NS",
+    "Wipro Limited":     "WIPRO.NS",
+    "HCL Technologies":  "HCLTECH.NS",
+    "Reliance Ind.":     "RELIANCE.NS",
+    "HDFC Bank":         "HDFC.NS",
+    "ICICI Bank":        "ICICIBANK.NS",
+    "Bajaj Finance":     "BAJFINANCE.NS",
+    "ITC Ltd":           "ITC.NS",
+    "Maruti Suzuki":     "MARUTI.NS",
+}
+
+INDEX_TICKERS = {
+    "NIFTY 50":    "^NSEI",
+    "SENSEX":      "^BSESN",
+    "BANK NIFTY":  "^NSEBANK",
+    "India VIX":   "^INDIAVIX",
+}
+
+
+@app.route("/api/live-quotes")
+def api_live_quotes():
+    """
+    GET /api/live-quotes
+    Returns current prices + day change for all tracked stocks.
+    Uses yfinance fast_info for speed; falls back to simulated data.
+    """
+    try:
+        import yfinance as yf
+        results = {}
+        for name, ticker in LIVE_TICKERS.items():
+            try:
+                t = yf.Ticker(ticker)
+                info = t.fast_info
+                price = float(info.get("lastPrice", 0) or info.get("regularMarketPrice", 0) or 0)
+                prev  = float(info.get("previousClose", price) or price)
+                if price == 0:
+                    hist = t.history(period="2d")
+                    if not hist.empty:
+                        price = float(hist["Close"].iloc[-1])
+                        prev  = float(hist["Close"].iloc[0]) if len(hist) > 1 else price
+                pct = ((price - prev) / prev * 100) if prev else 0
+                results[ticker] = {
+                    "name": name,
+                    "symbol": ticker,
+                    "price": round(price, 2),
+                    "prevClose": round(prev, 2),
+                    "changePct": round(pct, 2),
+                }
+            except Exception:
+                pass
+        if not results:
+            return jsonify({"error": "No data available", "fallback": True}), 200
+        return jsonify(results)
+    except ImportError:
+        return jsonify({"error": "yfinance not installed", "fallback": True}), 200
+    except Exception as exc:
+        return jsonify({"error": str(exc), "fallback": True}), 200
+
+
+@app.route("/api/market-indices")
+def api_market_indices():
+    """
+    GET /api/market-indices
+    Returns current values for NIFTY 50, SENSEX, BANK NIFTY, India VIX.
+    """
+    try:
+        import yfinance as yf
+        results = {}
+        for name, ticker in INDEX_TICKERS.items():
+            try:
+                t = yf.Ticker(ticker)
+                info = t.fast_info
+                price = float(info.get("lastPrice", 0) or info.get("regularMarketPrice", 0) or 0)
+                prev  = float(info.get("previousClose", price) or price)
+                if price == 0:
+                    hist = t.history(period="2d")
+                    if not hist.empty:
+                        price = float(hist["Close"].iloc[-1])
+                        prev  = float(hist["Close"].iloc[0]) if len(hist) > 1 else price
+                pct = ((price - prev) / prev * 100) if prev else 0
+                results[name] = {
+                    "symbol": ticker,
+                    "value": round(price, 2),
+                    "prevClose": round(prev, 2),
+                    "changePct": round(pct, 2),
+                }
+            except Exception:
+                pass
+        if not results:
+            return jsonify({"error": "No data", "fallback": True}), 200
+        return jsonify(results)
+    except ImportError:
+        return jsonify({"error": "yfinance not installed", "fallback": True}), 200
+    except Exception as exc:
+        return jsonify({"error": str(exc), "fallback": True}), 200
+
+
+@app.route("/api/search-stocks")
+def api_search_stocks():
+    """
+    GET /api/search-stocks?q=tcs
+    Searches tracked stocks by name or symbol. Returns matching results with live prices.
+    """
+    query = (request.args.get("q", "") or "").strip().lower()
+    if not query:
+        return jsonify([])
+
+    # Extended stock list for broader search
+    ALL_STOCKS = {
+        **LIVE_TICKERS,
+        "Tech Mahindra":     "TECHM.NS",
+        "Sun Pharma":        "SUNPHARMA.NS",
+        "Tata Motors":       "TATAMOTORS.NS",
+        "L&T":               "LT.NS",
+        "Axis Bank":         "AXISBANK.NS",
+        "Kotak Bank":        "KOTAKBANK.NS",
+        "SBI":               "SBIN.NS",
+        "Asian Paints":      "ASIANPAINT.NS",
+        "Hindustan Unilever": "HINDUNILVR.NS",
+        "Bharti Airtel":     "BHARTIARTL.NS",
+        "Power Grid":        "POWERGRID.NS",
+        "Titan Company":     "TITAN.NS",
+        "UltraTech Cement":  "ULTRACEMCO.NS",
+        "Nestle India":      "NESTLEIND.NS",
+        "Adani Ports":       "ADANIPORTS.NS",
+    }
+
+    matches = []
+    for name, ticker in ALL_STOCKS.items():
+        if query in name.lower() or query in ticker.lower():
+            matches.append({"name": name, "symbol": ticker})
+
+    # Try to fetch live prices for matches
+    try:
+        import yfinance as yf
+        for m in matches[:10]:  # limit to 10
+            try:
+                t = yf.Ticker(m["symbol"])
+                info = t.fast_info
+                price = float(info.get("lastPrice", 0) or info.get("regularMarketPrice", 0) or 0)
+                prev  = float(info.get("previousClose", price) or price)
+                if price == 0:
+                    hist = t.history(period="1d")
+                    if not hist.empty:
+                        price = float(hist["Close"].iloc[-1])
+                pct = ((price - prev) / prev * 100) if prev else 0
+                m["price"] = round(price, 2)
+                m["changePct"] = round(pct, 2)
+            except Exception:
+                m["price"] = 0
+                m["changePct"] = 0
+    except ImportError:
+        pass
+
+    return jsonify(matches[:10])
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
 #  MAIN
 # ═══════════════════════════════════════════════════════════════════════════════
 
@@ -639,6 +820,10 @@ if __name__ == "__main__":
     print("    GET  /api/predict?ticker=TCS.NS&days=30")
     print("    GET  /api/recommend?age=30&income=80000&risk=moderate")
     print("    GET  /api/compare?start=2018&end=2024")
+    print("    GET  /api/live-quotes")
+    print("    GET  /api/market-indices")
+    print("    GET  /api/search-stocks?q=tcs")
     print("    POST /api/chat  (body: {\"message\": \"...\"})")
     print("="*55 + "\n")
     app.run(debug=True, port=5000, host="0.0.0.0")
+
