@@ -5,6 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>InvestIQ Pro — Live Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link
     href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap"
     rel="stylesheet">
@@ -1694,6 +1695,38 @@
       }
     }
 
+    /* ══ ANALYTICS PANEL STYLES ══ */
+    .analytics-grid-2-1 { display:grid; grid-template-columns:2fr 1fr; gap:1.2rem; margin-bottom:1.2rem; }
+    .analytics-grid-1-1 { display:grid; grid-template-columns:1fr 1fr; gap:1.2rem; margin-bottom:1.2rem; }
+    .an-card { background:var(--bg3); border:1px solid var(--border); border-radius:16px; padding:1.4rem; transition:border-color 0.3s; }
+    .an-card:hover { border-color:rgba(245,200,66,0.2); }
+    .an-card-hdr { display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; }
+    .an-card-ttl { font-family:'Syne',sans-serif; font-weight:800; font-size:0.95rem; display:flex; align-items:center; gap:0.5rem; }
+    .an-card-sub { font-size:0.75rem; color:var(--muted); }
+    .an-card-ico { width:26px; height:26px; border-radius:7px; display:flex; align-items:center; justify-content:center; font-size:0.8rem; }
+    .an-summary-strip { display:grid; grid-template-columns:repeat(4,1fr); gap:0.9rem; margin-bottom:1.4rem; }
+    .an-kpi { background:var(--bg3); border:1px solid var(--border); border-radius:14px; padding:1.1rem 1.2rem; position:relative; overflow:hidden; transition:transform 0.2s,border-color 0.2s; }
+    .an-kpi:hover { transform:translateY(-3px); border-color:rgba(245,200,66,0.2); }
+    .an-kpi::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg,transparent,var(--kpi-c,var(--gold)),transparent); opacity:0; transition:opacity 0.3s; }
+    .an-kpi:hover::before { opacity:1; }
+    .an-kpi-lbl { font-size:0.72rem; color:var(--muted); font-weight:500; text-transform:uppercase; letter-spacing:0.07em; margin-bottom:0.4rem; display:flex; align-items:center; gap:0.35rem; }
+    .an-kpi-val { font-family:'Syne',sans-serif; font-weight:800; font-size:1.5rem; letter-spacing:-0.03em; background:linear-gradient(135deg,var(--kpi-c,var(--gold)),var(--kpi-e,var(--emerald))); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+    .an-kpi-chg { font-size:0.72rem; font-weight:600; margin-top:0.2rem; }
+    .an-section-ttl { font-family:'Syne',sans-serif; font-weight:800; font-size:1rem; margin-bottom:0.9rem; display:flex; align-items:center; gap:0.5rem; }
+    .an-insight { padding:0.85rem 1rem; border-radius:12px; border:1px solid var(--border); background:rgba(255,255,255,0.02); margin-bottom:0.5rem; transition:border-color 0.2s; }
+    .an-insight:hover { border-color:rgba(245,200,66,0.2); }
+    .an-insight-tag { font-size:0.65rem; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; margin-bottom:0.3rem; }
+    .an-insight-tag.bull { color:var(--emerald); } .an-insight-tag.bear { color:var(--coral); } .an-insight-tag.neutral { color:var(--sky); }
+    .an-insight-txt { font-size:0.82rem; line-height:1.5; }
+    .an-insight-meta { font-size:0.68rem; color:var(--muted); margin-top:0.3rem; }
+    .an-canvas-wrap canvas { max-height:300px; }
+    .an-legend { margin-top:0.8rem; display:flex; flex-direction:column; gap:0.4rem; }
+    .an-legend-item { display:flex; align-items:center; gap:0.5rem; font-size:0.78rem; color:var(--muted); }
+    .an-legend-dot { width:9px; height:9px; border-radius:3px; flex-shrink:0; }
+    .an-legend-val { margin-left:auto; font-weight:600; color:var(--text); }
+    @media(max-width:1080px){ .an-summary-strip{grid-template-columns:repeat(2,1fr)} .analytics-grid-2-1,.analytics-grid-1-1{grid-template-columns:1fr} }
+    @media(max-width:600px){ .an-summary-strip{grid-template-columns:1fr} }
+
     /* ══ CHATBOT FAB + PANEL ══ */
     .chat-fab {
       position: fixed;
@@ -1964,6 +1997,9 @@
         <button class="snav-btn" id="tab-momentum" onclick="switchTab('momentum')">
           🚀 My Momentum
         </button>
+        <button class="snav-btn" id="tab-analytics" onclick="switchTab('analytics')">
+          📊 Analytics
+        </button>
       </div>
     </div>
 
@@ -2030,6 +2066,27 @@
         <div id="sbRecos"></div>
 
       </div><!-- /sb-momentum -->
+
+      <!-- ── Analytics sidebar panel ── -->
+      <div class="sb-panel" id="sb-analytics">
+        <div class="sb-lbl">Analytics Overview</div>
+        <div class="sb-ai">
+          <div class="sb-ai-ico">📊</div>
+          <div>
+            <div class="sb-ai-lbl">Chart.js Panels</div>
+            <div class="sb-ai-txt">Market trends, risk radar, sector breakdown, performance — all powered by Chart.js.</div>
+          </div>
+        </div>
+        <div class="sb-lbl" style="margin-top:0.8rem">Available Charts</div>
+        <div style="display:flex;flex-direction:column;gap:0.4rem">
+          <div class="qrow"><div><div class="qrow-lbl">📉 Market Trends</div><div style="font-size:0.7rem;color:var(--muted)">6-month price movement</div></div></div>
+          <div class="qrow"><div><div class="qrow-lbl">📊 Stock Comparison</div><div style="font-size:0.7rem;color:var(--muted)">Price bar chart</div></div></div>
+          <div class="qrow"><div><div class="qrow-lbl">📈 Performance</div><div style="font-size:0.7rem;color:var(--muted)">YTD quarterly returns</div></div></div>
+          <div class="qrow"><div><div class="qrow-lbl">🎯 Risk Radar</div><div style="font-size:0.7rem;color:var(--muted)">Volatility, Beta, VaR</div></div></div>
+          <div class="qrow"><div><div class="qrow-lbl">🔥 Volatility Index</div><div style="font-size:0.7rem;color:var(--muted)">30-day rolling</div></div></div>
+          <div class="qrow"><div><div class="qrow-lbl">🏢 Sector Allocation</div><div style="font-size:0.7rem;color:var(--muted)">Donut + bar chart</div></div></div>
+        </div>
+      </div><!-- /sb-analytics -->
 
     </div><!-- /sidebar-body -->
 
@@ -2266,6 +2323,76 @@
         </div>
 
       </div><!-- /main-momentum -->
+
+      <!-- ═══ ANALYTICS MAIN PANEL ═══ -->
+      <div class="main-panel" id="main-analytics">
+
+        <!-- KPI Summary Strip -->
+        <div class="an-summary-strip">
+          <div class="an-kpi" style="--kpi-c:var(--gold);--kpi-e:#FFE580"><div class="an-kpi-lbl">💰 Portfolio Value</div><div class="an-kpi-val">₹12.4L</div><div class="an-kpi-chg up">▲ 4.2% this month</div></div>
+          <div class="an-kpi" style="--kpi-c:var(--emerald);--kpi-e:var(--sky)"><div class="an-kpi-lbl">📈 Today's Gain</div><div class="an-kpi-val">+₹8,420</div><div class="an-kpi-chg up">▲ 1.8% today</div></div>
+          <div class="an-kpi" style="--kpi-c:var(--sky);--kpi-e:#A78BFA"><div class="an-kpi-lbl">📋 Active Stocks</div><div class="an-kpi-val">5</div><div class="an-kpi-chg up">2 outperforming</div></div>
+          <div class="an-kpi" style="--kpi-c:var(--coral);--kpi-e:var(--gold)"><div class="an-kpi-lbl">⚠️ Risk Score</div><div class="an-kpi-val">62/100</div><div class="an-kpi-chg down">▼ Moderate risk</div></div>
+        </div>
+
+        <!-- Row 1: Trends Line + Market Insights -->
+        <div class="analytics-grid-2-1">
+          <div class="an-card">
+            <div class="an-card-hdr"><div><div class="an-card-ttl"><span class="an-card-ico" style="background:rgba(245,200,66,0.12)">📉</span> Market Trends</div><div class="an-card-sub">6-month stock price movement</div></div></div>
+            <div class="an-canvas-wrap"><canvas id="anLineChart"></canvas></div>
+          </div>
+          <div class="an-card">
+            <div class="an-card-hdr"><div><div class="an-card-ttl"><span class="an-card-ico" style="background:rgba(0,217,126,0.12)">💡</span> Market Insights</div><div class="an-card-sub">AI-generated analysis</div></div></div>
+            <div class="an-insight"><div class="an-insight-tag bull">● Bullish</div><div class="an-insight-txt">TCS showing strong upward momentum with consistent quarterly earnings beats.</div><div class="an-insight-meta">Updated 2h ago · Confidence: 87%</div></div>
+            <div class="an-insight"><div class="an-insight-tag bear">● Bearish</div><div class="an-insight-txt">Wipro faces headwinds from reduced IT spending in European markets.</div><div class="an-insight-meta">Updated 4h ago · Confidence: 72%</div></div>
+            <div class="an-insight"><div class="an-insight-tag neutral">● Neutral</div><div class="an-insight-txt">HCL Tech consolidating near support levels. Watch for breakout above ₹1,260.</div><div class="an-insight-meta">Updated 1h ago · Confidence: 65%</div></div>
+          </div>
+        </div>
+
+        <!-- Row 2: Stock Comparison Bar -->
+        <div class="an-card" style="margin-bottom:1.2rem">
+          <div class="an-card-hdr"><div><div class="an-card-ttl"><span class="an-card-ico" style="background:rgba(0,217,126,0.12)">📊</span> Stock Comparison</div><div class="an-card-sub">Current stock prices across IT sector</div></div></div>
+          <div class="an-canvas-wrap"><canvas id="anBarChart"></canvas></div>
+        </div>
+
+        <!-- Row 3: Performance Line + Performance Table -->
+        <div class="an-section-ttl">📈 Performance & Risk Analytics</div>
+        <div class="analytics-grid-2-1">
+          <div class="an-card">
+            <div class="an-card-hdr"><div><div class="an-card-ttl"><span class="an-card-ico" style="background:rgba(245,200,66,0.12)">📈</span> Performance Overview</div><div class="an-card-sub">Year-to-date quarterly returns</div></div></div>
+            <div class="an-canvas-wrap"><canvas id="anPerfLine"></canvas></div>
+          </div>
+          <div class="an-card">
+            <div class="an-card-hdr"><div><div class="an-card-ttl"><span class="an-card-ico" style="background:rgba(255,77,77,0.12)">🎯</span> Risk Radar</div><div class="an-card-sub">Volatility, Beta & Drawdown metrics</div></div></div>
+            <div class="an-canvas-wrap"><canvas id="anRiskRadar"></canvas></div>
+          </div>
+        </div>
+
+        <!-- Row 4: Volatility + Sector -->
+        <div class="analytics-grid-1-1">
+          <div class="an-card">
+            <div class="an-card-hdr"><div><div class="an-card-ttl"><span class="an-card-ico" style="background:rgba(245,200,66,0.12)">🔥</span> Volatility Index</div><div class="an-card-sub">30-day rolling volatility</div></div></div>
+            <div class="an-canvas-wrap"><canvas id="anVolBar"></canvas></div>
+          </div>
+          <div class="an-card">
+            <div class="an-card-hdr"><div><div class="an-card-ttl"><span class="an-card-ico" style="background:rgba(167,139,250,0.12)">🏢</span> Sector Allocation</div><div class="an-card-sub">Portfolio distribution by sector</div></div></div>
+            <div class="an-canvas-wrap" style="max-width:250px;margin:0 auto"><canvas id="anSectorDonut"></canvas></div>
+            <div class="an-legend">
+              <div class="an-legend-item"><span class="an-legend-dot" style="background:var(--gold)"></span> IT Services <span class="an-legend-val">45%</span></div>
+              <div class="an-legend-item"><span class="an-legend-dot" style="background:var(--emerald)"></span> Cloud & SaaS <span class="an-legend-val">25%</span></div>
+              <div class="an-legend-item"><span class="an-legend-dot" style="background:var(--sky)"></span> Consulting <span class="an-legend-val">18%</span></div>
+              <div class="an-legend-item"><span class="an-legend-dot" style="background:#A78BFA"></span> Product Eng. <span class="an-legend-val">12%</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Row 5: Sector Performance -->
+        <div class="an-card" style="margin-bottom:1.2rem">
+          <div class="an-card-hdr"><div><div class="an-card-ttl"><span class="an-card-ico" style="background:rgba(0,217,126,0.12)">📊</span> Sector Performance</div><div class="an-card-sub">Revenue growth by segment</div></div></div>
+          <div class="an-canvas-wrap"><canvas id="anSectorBar"></canvas></div>
+        </div>
+
+      </div><!-- /main-analytics -->
 
     </div>
   </main>
@@ -3098,6 +3225,10 @@
       if (id === 'momentum') {
         titleEl.textContent = 'My Momentum';
         subEl.textContent = 'Holdings · AI signals · Buy recommendations';
+      } else if (id === 'analytics') {
+        titleEl.textContent = 'Analytics Dashboard';
+        subEl.textContent = 'Market trends · Risk radar · Sector allocation · Performance';
+        if(!window._analyticsInit){ initAnalyticsCharts(); window._analyticsInit=true; }
       } else {
         titleEl.textContent = 'Live Dashboard';
         subEl.textContent = 'Real-time market data · AI risk scoring · LSTM predictions';
@@ -3116,6 +3247,48 @@
       renderRecos();
       renderSbRisk();
       if (loopCount % 3 === 0) updateAi();
+    }
+
+    // ══════════════════════════════════════════════════
+    //  ANALYTICS CHARTS (lazy-init)
+    // ══════════════════════════════════════════════════
+    function initAnalyticsCharts(){
+      Chart.defaults.color='#7A8BA0'; Chart.defaults.borderColor='rgba(255,255,255,0.06)'; Chart.defaults.font.family="'DM Sans',sans-serif";
+      const ttStyle={backgroundColor:'#111927',borderColor:'rgba(245,200,66,0.3)',borderWidth:1,padding:12,cornerRadius:12};
+      const legStyle={position:'bottom',labels:{usePointStyle:true,pointStyle:'circle',padding:18,font:{size:11}}};
+      // 1) Market Trends Line
+      new Chart(document.getElementById('anLineChart'),{type:'line',data:{labels:['Jan','Feb','Mar','Apr','May','Jun'],datasets:[
+        {label:'TCS',data:[3200,3300,3250,3400,3500,3642],borderColor:'#F5C842',backgroundColor:'rgba(245,200,66,0.08)',fill:true,tension:0.4,borderWidth:2.5,pointRadius:3,pointBackgroundColor:'#F5C842'},
+        {label:'Infosys',data:[1400,1450,1500,1480,1550,1612],borderColor:'#00D97E',backgroundColor:'rgba(0,217,126,0.06)',fill:true,tension:0.4,borderWidth:2.5,pointRadius:3,pointBackgroundColor:'#00D97E'},
+        {label:'Wipro',data:[500,490,475,468,460,457],borderColor:'#FF6B6B',backgroundColor:'rgba(255,107,107,0.05)',fill:true,tension:0.4,borderWidth:2,pointRadius:2,pointBackgroundColor:'#FF6B6B'},
+        {label:'HCL Tech',data:[1150,1180,1200,1190,1210,1228],borderColor:'#38BFFF',backgroundColor:'rgba(56,191,255,0.05)',fill:true,tension:0.4,borderWidth:2,pointRadius:2,pointBackgroundColor:'#38BFFF'},
+        {label:'Tech Mahindra',data:[1400,1380,1370,1360,1350,1346],borderColor:'#A78BFA',backgroundColor:'rgba(167,139,250,0.05)',fill:true,tension:0.4,borderWidth:2,pointRadius:2,pointBackgroundColor:'#A78BFA'}
+      ]},options:{responsive:true,interaction:{intersect:false,mode:'index'},plugins:{legend:legStyle,tooltip:{...ttStyle,titleColor:'#EEF2FF',bodyColor:'#7A8BA0',displayColors:true}},scales:{y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{callback:v=>'₹'+v}},x:{grid:{display:false}}}}});
+      // 2) Bar Chart — Stock Comparison
+      new Chart(document.getElementById('anBarChart'),{type:'bar',data:{labels:['TCS','Infosys','Wipro','HCL Tech','Tech Mahindra'],datasets:[{label:'Stock Price (₹)',data:[3642,1612,457,1228,1346],backgroundColor:['rgba(245,200,66,0.7)','rgba(0,217,126,0.7)','rgba(255,107,107,0.7)','rgba(56,191,255,0.7)','rgba(167,139,250,0.7)'],borderColor:['#F5C842','#00D97E','#FF6B6B','#38BFFF','#A78BFA'],borderWidth:2,borderRadius:8,borderSkipped:false}]},options:{responsive:true,plugins:{legend:{display:false},tooltip:{...ttStyle,callbacks:{label:ctx=>'₹'+ctx.parsed.y.toLocaleString()}}},scales:{y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{callback:v=>'₹'+v}},x:{grid:{display:false}}}}});
+      // 3) Performance Line
+      new Chart(document.getElementById('anPerfLine'),{type:'line',data:{labels:['Q1','Q2','Q3','Q4'],datasets:[
+        {label:'TCS',data:[8.2,10.4,12.1,15.3],borderColor:'#F5C842',tension:0.4,borderWidth:2.5,pointRadius:4,pointBackgroundColor:'#F5C842'},
+        {label:'Infosys',data:[6.1,8.3,7.9,11.2],borderColor:'#00D97E',tension:0.4,borderWidth:2.5,pointRadius:4,pointBackgroundColor:'#00D97E'},
+        {label:'Wipro',data:[2.3,1.8,-0.5,-2.1],borderColor:'#FF6B6B',tension:0.4,borderWidth:2,pointRadius:3,pointBackgroundColor:'#FF6B6B'},
+        {label:'HCL Tech',data:[4.5,5.2,6.8,7.1],borderColor:'#38BFFF',tension:0.4,borderWidth:2,pointRadius:3,pointBackgroundColor:'#38BFFF'},
+        {label:'Tech Mahindra',data:[3.1,1.5,-1.2,-3.8],borderColor:'#A78BFA',tension:0.4,borderWidth:2,pointRadius:3,pointBackgroundColor:'#A78BFA'}
+      ]},options:{responsive:true,plugins:{legend:legStyle,tooltip:{...ttStyle,callbacks:{label:ctx=>ctx.dataset.label+': '+ctx.parsed.y+'% return'}}},scales:{y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{callback:v=>v+'%'}},x:{grid:{display:false}}}}});
+      // 4) Risk Radar
+      new Chart(document.getElementById('anRiskRadar'),{type:'radar',data:{labels:['Volatility','Beta','Max Drawdown','Sharpe Ratio','VaR'],datasets:[
+        {label:'TCS',data:[40,55,30,80,45],borderColor:'#F5C842',backgroundColor:'rgba(245,200,66,0.1)',pointBackgroundColor:'#F5C842',borderWidth:2},
+        {label:'Infosys',data:[25,40,20,85,30],borderColor:'#00D97E',backgroundColor:'rgba(0,217,126,0.1)',pointBackgroundColor:'#00D97E',borderWidth:2},
+        {label:'Wipro',data:[75,80,70,30,80],borderColor:'#FF6B6B',backgroundColor:'rgba(255,107,107,0.1)',pointBackgroundColor:'#FF6B6B',borderWidth:2}
+      ]},options:{responsive:true,plugins:{legend:legStyle},scales:{r:{angleLines:{color:'rgba(255,255,255,0.06)'},grid:{color:'rgba(255,255,255,0.06)'},pointLabels:{color:'#7A8BA0',font:{size:11}},ticks:{display:false},suggestedMin:0,suggestedMax:100}}}});
+      // 5) Volatility Bar
+      new Chart(document.getElementById('anVolBar'),{type:'bar',data:{labels:['TCS','Infosys','Wipro','HCL Tech','Tech M.'],datasets:[{label:'Volatility %',data:[18.2,12.5,32.8,15.4,28.6],backgroundColor:['rgba(245,200,66,0.6)','rgba(0,217,126,0.6)','rgba(255,107,107,0.6)','rgba(56,191,255,0.6)','rgba(167,139,250,0.6)'],borderColor:['#F5C842','#00D97E','#FF6B6B','#38BFFF','#A78BFA'],borderWidth:2,borderRadius:8,borderSkipped:false}]},options:{indexAxis:'y',responsive:true,plugins:{legend:{display:false},tooltip:{...ttStyle,callbacks:{label:ctx=>ctx.parsed.x+'% volatility'}}},scales:{x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{callback:v=>v+'%'}},y:{grid:{display:false}}}}});
+      // 6) Sector Donut
+      new Chart(document.getElementById('anSectorDonut'),{type:'doughnut',data:{labels:['IT Services','Cloud & SaaS','Consulting','Product Eng.'],datasets:[{data:[45,25,18,12],backgroundColor:['#F5C842','#00D97E','#38BFFF','#A78BFA'],borderColor:'#111927',borderWidth:3,hoverOffset:8}]},options:{responsive:true,cutout:'65%',plugins:{legend:{display:false},tooltip:{...ttStyle,callbacks:{label:ctx=>ctx.label+': '+ctx.parsed+'%'}}}}});
+      // 7) Sector Performance Bar
+      new Chart(document.getElementById('anSectorBar'),{type:'bar',data:{labels:['IT Services','Cloud & SaaS','Consulting','Product Eng.'],datasets:[
+        {label:'Q3 2025',data:[12.4,18.2,8.1,14.7],backgroundColor:'rgba(245,200,66,0.4)',borderColor:'#F5C842',borderWidth:1,borderRadius:6},
+        {label:'Q4 2025',data:[15.1,22.5,9.8,16.3],backgroundColor:'rgba(0,217,126,0.4)',borderColor:'#00D97E',borderWidth:1,borderRadius:6}
+      ]},options:{responsive:true,plugins:{legend:legStyle,tooltip:{...ttStyle,callbacks:{label:ctx=>ctx.dataset.label+': '+ctx.parsed.y+'% growth'}}},scales:{y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{callback:v=>v+'%'}},x:{grid:{display:false}}}}});
     }
 
     init();
