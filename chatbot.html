@@ -295,6 +295,10 @@
 </div>
 
 <script>
+// API base URL — available to all functions in this script
+const _chatAPI = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost'
+  ? `${window.location.protocol}//${window.location.host}` : '';
+
 const chatEl=document.getElementById('chatMessages');
 const inputEl=document.getElementById('userInput');
 let quizAnswers=[0,0,0];
@@ -312,12 +316,43 @@ inputEl.addEventListener('keydown',e=>{if(e.key==='Enter')sendMessage()});
 
 function askQ(q){inputEl.value=q;sendMessage()}
 
-function sendMessage(){
+// Conversation history for Gemini context (last 20 turns)
+let _chatHistory = [];
+
+async function sendMessage(){
   const msg=inputEl.value.trim();if(!msg)return;
   addUser(msg);inputEl.value='';
   showTyping();
-  setTimeout(()=>{removeTyping();const r=getResponse(msg);addBot(r)},800+Math.random()*500);
+
+  _chatHistory.push({role:'user', text: msg});
+  if(_chatHistory.length > 20) _chatHistory = _chatHistory.slice(-20);
+
+  let reply = '';
+  try {
+    const res = await fetch(`${_chatAPI}/api/gemini`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({message: msg, history: _chatHistory.slice(0,-1)})
+    });
+    const data = await res.json();
+    if (data.gemini_error) console.warn('[InvestIQ] Gemini error:', data.gemini_error, '| source:', data.source);
+    if (data.ok && data.reply) {
+      reply = data.reply;
+    } else {
+      reply = getResponse(msg);
+    }
+  } catch(e) {
+    console.warn('[InvestIQ] /api/gemini unreachable, using local fallback:', e.message);
+    reply = getResponse(msg);
+  }
+
+  removeTyping();
+  addBot(reply);
+
+  _chatHistory.push({role:'model', text: reply});
+  if(_chatHistory.length > 20) _chatHistory = _chatHistory.slice(-20);
 }
+
 
 function addUser(t){addMsg(t,'msg-user');saveMsg(t,'msg-user')}
 function addBot(t){addMsg(t,'msg-bot');saveMsg(t,'msg-bot')}
@@ -382,107 +417,112 @@ function startVoice(){
   }catch(e){addBot("Voice input is not supported in this browser.")}
 }
 
-// NLP RESPONSE ENGINE (30+ topics)
+// ── Comprehensive local fallback (used when Gemini + Flask are both offline) ──
 function getResponse(input){
-  const m=input.toLowerCase();
+  const m = input.toLowerCase();
 
-  if(["hi","hello","hey","good morning","good evening"].some(w=>m.includes(w)))
-    return "Hello! 👋 I'm **InvestIQ AI**, your personal financial advisor. I can help with stocks, mutual funds, budgeting, risk analysis, and investment recommendations. What would you like to explore?";
+  // Greetings
+  if(/^(hi|hello|hey|good\s|namaste|hola|howdy)/.test(m))
+    return "Hello! 👋 I'm **InvestIQ AI**, your personal financial advisor.\n\nI can help with stocks, mutual funds, trading, budgeting, risk analysis, and investment recommendations.\n\n💡 *Ask me anything — e.g. \"What is intraday trading?\" or \"Should I invest in TCS?\"*";
 
-  if(m.includes("what is a stock")||m.includes("what are stocks"))
-    return "📈 A **stock** (share) represents ownership in a company. When you buy a stock, you become a part-owner and can profit through price appreciation and dividends. Indian stocks trade on **NSE** (NIFTY 50) and **BSE** (SENSEX).";
+  // Intraday trading
+  if(/intraday|day.?trad|scalp|momentum.?trad/i.test(m))
+    return "📈 **Intraday Trading** means buying and selling stocks on the SAME day before market close (3:30 PM IST).\n\n**Key concepts:**\n• **Momentum trading** — ride strong price moves with volume confirmation\n• **Scalping** — quick small profits from tiny price changes\n• **Breakout trading** — buy when price breaks key resistance with volume\n\n**Tools:** RSI (>60 = bullish momentum), MACD crossovers, VWAP, Level 2 quotes\n\n**Risk management:**\n• Never risk >1-2% of capital per trade\n• Always set a **stop-loss** before entering\n• Target 2:1 or better risk:reward ratio\n\n⚠️ 90% of intraday traders lose money. Start with paper trading first!";
 
-  if(m.includes("nse")||m.includes("bse"))
-    return "🏛️ **NSE** (National Stock Exchange) and **BSE** (Bombay Stock Exchange) are India's two premier stock exchanges. NSE hosts the NIFTY 50 index; BSE hosts the SENSEX. Both are regulated by SEBI.";
+  // Swing trading
+  if(/swing.?trad|position.?trad|hold.*days|few days/i.test(m))
+    return "📊 **Swing Trading** = holding stocks for 2 days to a few weeks to capture short-term price swings.\n\n**Strategy:**\n• Buy near support levels, sell near resistance\n• Use 9/21 EMA crossovers for entry signals\n• RSI below 35 = potential buy; above 70 = potential exit\n• Volume confirmation is key — no volume, no conviction\n\n**Best stocks:** High-liquidity NIFTY 50 stocks like TCS, Reliance, HDFC Bank\n\n📌 Time your exits — never let a winning trade turn into a loss by being greedy.";
 
-  if(m.includes("dividend"))
-    return "💰 **Dividends** are a share of company profits paid to shareholders. In India, dividends are taxed at your income slab rate. TCS, Infosys, and HCL Tech are known for consistent dividend payments.";
+  // Options
+  if(/option|call|put|strike|expiry|f&o|derivative|premium|theta|delta|vega/i.test(m))
+    return "🎯 **Options in Indian Markets**\n\n**Call Option** = right to BUY at a fixed price (strike). Profit when stock goes UP.\n**Put Option** = right to SELL at a fixed price. Profit when stock goes DOWN.\n\n**Key Greeks:**\n• **Delta** — how much option price moves per ₹1 move in stock\n• **Theta** — time decay (options lose value daily)\n• **Vega** — sensitivity to volatility (IV)\n\n**Common strategies:**\n• **Covered Call** — sell call against your shares (generate income)\n• **Bull Put Spread** — limited risk bullish play\n• **Iron Condor** — profit from range-bound market\n\n⚠️ F&O requires significant capital (lots of 25-75 shares). SEBI requires special approval. Start with index options (NIFTY/BANK NIFTY) first.";
 
-  if(m.includes("stock")||m.includes("share")||m.includes("equity"))
-    return "📊 **Equities** offer higher long-term returns but come with volatility. The NIFTY 50 has delivered ~12–14% CAGR over the past decade. Ideal for investors with a 5+ year horizon.";
+  // RSI
+  if(/\brsi\b|relative strength/i.test(m))
+    return "📊 **RSI (Relative Strength Index)**\n\nMeasures momentum on a scale of 0–100.\n\n• **RSI < 30** → Oversold → Potential BUY signal\n• **RSI 30–70** → Neutral zone\n• **RSI > 70** → Overbought → Potential SELL/exit signal\n• **RSI > 80** → Strongly overbought — caution!\n\n**Divergence:**\n• Price makes new high but RSI doesn't → bearish divergence (sell soon)\n• Price makes new low but RSI doesn't → bullish divergence (buy soon)\n\n📌 RSI works best in trending markets. In sideways markets, combine with Bollinger Bands.";
 
-  if(m.includes("mutual fund")||m.includes("mf "))
-    return "🏦 **Mutual Funds** pool money from investors to invest in a diversified portfolio of stocks, bonds, or other assets, managed by professionals. Categories: Equity, Debt, Hybrid, and Index Funds. Regulated by SEBI.";
+  // MACD
+  if(/\bmacd\b|moving average convergence/i.test(m))
+    return "📈 **MACD (Moving Average Convergence Divergence)**\n\nShows the relationship between two EMAs (12-day and 26-day).\n\n**Components:**\n• **MACD Line** = 12 EMA − 26 EMA\n• **Signal Line** = 9 EMA of MACD line\n• **Histogram** = MACD − Signal\n\n**Trading signals:**\n• MACD crosses ABOVE signal line → **BUY** signal 🟢\n• MACD crosses BELOW signal line → **SELL** signal 🔴\n• Histogram turns positive → increasing bullish momentum\n\n📌 Best used in **trending markets**. Combine with RSI for confirmation.";
 
-  if(m.includes("sip"))
-    return "📅 **SIP (Systematic Investment Plan)** lets you invest a fixed amount monthly — as low as ₹500. SIPs average out volatility through rupee-cost averaging. ₹5,000/month at 12% for 30 years → **₹1.7 Crore**! Start early.";
+  // Moving averages / EMA / SMA
+  if(/moving.?average|\bema\b|\bsma\b|\bdma\b|200.?day|50.?day/i.test(m))
+    return "📉 **Moving Averages** smooth out price data to identify trends.\n\n**SMA** (Simple) vs **EMA** (Exponential — gives more weight to recent prices)\n\n**Key levels traders watch:**\n• **20 EMA** — short-term trend\n• **50 DMA** — medium-term support/resistance\n• **200 DMA** — long-term trend (price above = bullish market)\n\n**Golden Cross** = 50 DMA crosses above 200 DMA → strong BUY signal 🟢\n**Death Cross** = 50 DMA crosses below 200 DMA → SELL signal 🔴\n\n📌 Stock above all three MAs = strong uptrend. Below all three = downtrend.";
 
-  if(m.includes("etf"))
-    return "📦 **ETFs** track an index and trade like stocks. Low cost (~0.1–0.2% expense ratio), great diversification. Popular: NIFTY BeES, GOLDBEES, Bharat Bond ETF.";
+  // Bollinger Bands
+  if(/bollinger|band|bb.?squeeze|bb.?breakout/i.test(m))
+    return "📊 **Bollinger Bands** — volatility indicator with 3 lines:\n• **Upper Band** = 20 SMA + 2 standard deviations\n• **Middle Band** = 20 SMA\n• **Lower Band** = 20 SMA − 2 standard deviations\n\n**Signals:**\n• Price touches lower band → potential BUY (oversold)\n• Price touches upper band → potential SELL (overbought)\n• **BB Squeeze** (bands narrow) = volatility compression → big move coming!\n• After squeeze, breakout direction = new trend\n\n📌 Combine with RSI: lower band touch + RSI < 35 = strong buy signal.";
 
-  if(m.includes("index fund"))
-    return "📉 **Index Funds** passively track NIFTY 50 or SENSEX with ~0.1% expense ratio. They consistently outperform most active funds over 10+ years. Ideal for passive investors.";
+  // Support / Resistance
+  if(/support|resistance|breakout|breakdown|pivot/i.test(m))
+    return "📐 **Support & Resistance — Core of Technical Analysis**\n\n**Support** = price floor where buying is strong (stock bounces up)\n**Resistance** = price ceiling where selling is heavy (stock reverses down)\n\n**Breakout** = price closes convincingly above resistance with high volume → buy signal!\n**Breakdown** = price falls below support → sell/short signal\n\n**How to find them:**\n• Previous highs and lows\n• Round numbers (₹1000, ₹500, ₹100)\n• 50/200 DMA levels\n• Pivot Points (calculated from previous day's OHLC)\n\n📌 The more times a level is tested, the stronger it is — and the bigger the move when it breaks.";
 
-  if(m.includes("bond")||m.includes("g-sec"))
-    return "📜 **Bonds** are debt instruments with periodic interest. G-Secs are the safest. **Sovereign Gold Bonds (SGBs)** offer 2.5% p.a. interest + gold appreciation — tax-free on maturity!";
+  // Volume
+  if(/\bvolume\b|oi|open interest|delivery/i.test(m))
+    return "📊 **Volume in Stock Trading**\n\nVolume = number of shares traded. It CONFIRMS price moves.\n\n**Rules:**\n• Price UP + Volume UP = strong bullish move ✅\n• Price UP + Volume DOWN = weak move, likely reversal ⚠️\n• Price DOWN + Volume UP = strong selling pressure 🔴\n• **Delivery %** = % of volume taken for delivery (not squared off) — high delivery = conviction\n\n**For F&O:**\n• **OI (Open Interest)** = total open contracts\n• Rising OI + rising price = fresh buying (bullish)\n• Rising OI + falling price = fresh selling (bearish)\n\n📌 Always check volume before entering — no volume = no trade!";
 
-  if(m.includes("ppf")||m.includes("provident fund"))
-    return "🔒 **PPF** offers 7.1% p.a., fully tax-free (EEE status). Lock-in: 15 years. Max: ₹1.5L/year. Excellent for conservative investors seeking safe, guaranteed returns.";
+  // Fundamental analysis
+  if(/fundamental|roe|roce|pb ratio|book value|earnings|eps|revenue|profit|balance sheet/i.test(m))
+    return "📋 **Fundamental Analysis — Key Metrics**\n\n| Metric | What it measures | Good range |\n|--------|-----------------|------------|\n| **P/E Ratio** | Price vs earnings | 15–25 (sector-dependent) |\n| **ROE** | Return on equity | >15% good, >20% excellent |\n| **ROCE** | Return on capital employed | >15% |\n| **Debt/Equity** | Leverage | <0.5 ideal |\n| **EPS Growth** | Earnings per share growth | >15% YoY |\n| **Revenue Growth** | Top-line | >10% YoY |\n\n**Where to find data:** NSE website, Screener.in (free), Tickertape, Moneycontrol\n\n📌 Buy great businesses at fair prices, not fair businesses at great prices — Warren Buffett.";
 
-  if(m.includes("elss")||m.includes("tax sav")||m.includes("80c"))
-    return "🧾 **ELSS** qualifies for ₹1.5L deduction under Section 80C (saves up to ₹46,800 in taxes). Shortest lock-in among 80C options: just 3 years. Offers equity returns (~12–15% CAGR).";
+  // IPO
+  if(/\bipo\b|initial public/i.test(m))
+    return "🏢 **IPO (Initial Public Offering)** — when a company lists on stock exchange for the first time.\n\n**How to apply:**\n1. Open UPI-linked demat account (Zerodha, Groww, etc.)\n2. Apply via broker app or bank ASAP portal\n3. Maximum retail application: ₹2 lakh\n4. Allotment is by lottery if oversubscribed\n\n**Tips:**\n• Check Grey Market Premium (GMP) for demand indication\n• Review DRHP (prospectus) — check for promoter pledging, debt levels\n• Don't blindly apply — check valuation vs listed peers\n• SME IPOs are high-risk; stick to mainboard\n\n📌 Listing gains are NOT guaranteed. Some IPOs list at a discount. DYOR!";
 
-  if(m.includes("invest"))
-    return "💼 Smart investing starts with defining your **goal, horizon, and risk appetite**. Rule of thumb: (100 - your age) = equity %. Diversify across equity, debt, and gold. Start SIPs immediately!";
+  // Gold / SGB
+  if(/gold|sgb|sovereign.?gold/i.test(m))
+    return "🥇 **Gold Investment Options (India)**\n\n**1. Sovereign Gold Bonds (SGBs)** ⭐ BEST\n• Issued by RBI, backed by government\n• 2.5% annual interest + gold price appreciation\n• Tax-free on maturity (8 years)\n• No storage/purity risk\n\n**2. Gold ETFs**\n• Trade on NSE like stocks\n• ~0.5% expense ratio\n• No physical delivery\n\n**3. Digital Gold** (Paytm/PhonePe)\n• Buy from ₹1, stored in vaults\n• Higher spread (buy-sell gap)\n\n**4. Physical Gold**\n• Making charges, storage risk, purity issues\n• Least efficient financially\n\n📌 Ideal allocation: **5-10% of portfolio** in gold as hedge against inflation and currency risk.";
 
-  if(m.includes("risk")||m.includes("volatil"))
-    return "⚠️ **Investment risk types:**\n• **Market risk** — overall decline\n• **Credit risk** — issuer default\n• **Liquidity risk** — can't sell when needed\n• **Inflation risk** — returns < inflation\n\nDiversification is the best risk management tool. Take the **Risk Quiz** for your profile!";
+  // SIP
+  if(/\bsip\b|systematic investment/i.test(m))
+    return "📅 **SIP (Systematic Investment Plan)**\n\nInvest a fixed amount every month automatically — as low as ₹500/month.\n\n**Why SIP works:**\n• **Rupee cost averaging** — buy more units when market falls, fewer when it rises\n• **Compounding** — returns earn returns over time\n• **Discipline** — automates investing, removes emotion\n\n**SIP calculator example:**\n₹10,000/month × 20 years × 12% CAGR = **₹98 lakhs** 🚀\n\n**Best SIP options:**\n• NIFTY 50 Index Fund (passive, low cost)\n• Flexi-cap Fund (active, diversified)\n• ELSS (tax saving under 80C)\n\n📌 Start a SIP TODAY. The best time to invest was yesterday; the second best time is now.";
 
-  if(m.includes("diversif")||m.includes("portfolio")||m.includes("allocation"))
-    return "🗂️ **Balanced Portfolio (Moderate):**\n• 55% Equity (index + flexi-cap)\n• 30% Debt (bonds, PPF, FDs)\n• 8% Gold (SGBs/ETFs)\n• 7% Cash/Liquid\n\nRebalance every 6–12 months. Take the **Risk Quiz** for your personalised mix!";
+  // Mutual funds
+  if(/mutual.?fund|flexi.?cap|large.?cap|mid.?cap|small.?cap|hybrid/i.test(m))
+    return "🏦 **Mutual Funds** — managed pools of investor money.\n\n**Categories:**\n• **Large-cap** — top 100 companies, stable, less volatile\n• **Mid-cap** — companies 101-250, higher growth potential\n• **Small-cap** — companies 251+, highest risk/reward\n• **Flexi-cap** — fund manager chooses across caps\n• **Index Fund** — passively tracks NIFTY/SENSEX\n• **Hybrid** — mix of equity + debt\n• **ELSS** — equity fund with 80C tax benefit\n\n**How to pick:**\n• Check 5-year returns vs benchmark (should beat it)\n• Expense ratio <1% for active, <0.2% for index\n• Use Screener on Value Research or Morningstar\n\n📌 For beginners: **NIFTY 50 Index Fund via SIP** is the simplest, lowest-cost, most effective choice.";
 
-  if(m.includes("hedge")||m.includes("hedging"))
-    return "🛡️ **Hedging** reduces downside risk:\n• Buy put options on index\n• Allocate to gold (inverse correlation)\n• Hold short-duration debt in uncertain markets\n• Invest in defensive sectors (FMCG, Pharma)";
+  // NIFTY/SENSEX/indices
+  if(/nifty|sensex|bank.?nifty|india.?vix|midcap|smallcap.?index/i.test(m))
+    return "📊 **Indian Market Indices**\n\n• **NIFTY 50** — Top 50 NSE companies. ~68% weight in 5 sectors: Banking, IT, Energy, FMCG, Pharma\n• **SENSEX** — Top 30 BSE companies. Oldest Indian index.\n• **BANK NIFTY** — 12 most liquid banking stocks. Highly volatile, day traders' favourite.\n• **NIFTY Midcap 100** — Mid-sized companies with higher growth.\n• **India VIX** — Fear index. VIX > 20 = high fear = potential market bottom.\n\n**Historical returns:**\n• NIFTY 50: ~12-14% CAGR over 20 years\n• SENSEX: ~13% CAGR since 1979\n\n📌 VIX spikes (>25) are often great buying opportunities!";
 
-  if(m.includes("bull")&&m.includes("market"))
-    return "🐂 A **bull market** = sustained 20%+ gains. Driven by GDP growth, low unemployment, optimism. India's NIFTY has been broadly bullish 2020–2024. Strategy: stay invested, follow SIPs.";
+  // Tax
+  if(/\btax\b|ltcg|stcg|80[cd]|capital.?gain|new.?regime|old.?regime/i.test(m))
+    return "🧾 **Tax on Investments (FY 2025-26)**\n\n**Equity (Stocks & Equity MFs):**\n• Hold > 1 year → **LTCG** — 12.5% on gains above ₹1.25 lakh\n• Hold < 1 year → **STCG** — 20%\n\n**Debt MFs/Bonds:** Taxed at income slab rate\n\n**Tax Saving (Section 80C — ₹1.5L limit):**\n• ELSS Mutual Funds (best: 3yr lock-in + equity returns)\n• PPF (7.1% guaranteed, 15yr)\n• EPF, NSC, Tax-Saver FD\n\n**Section 80D:** Medical insurance — ₹25K self + ₹25K parents\n**Section 80CCD(1B):** NPS — extra ₹50K deduction\n\n📌 New Tax Regime removes most deductions but has lower slab rates. Compare both before choosing!";
 
-  if(m.includes("bear")&&m.includes("market"))
-    return "🐻 A **bear market** = 20%+ drop from highs. Strategy: continue SIPs (buy cheap), avoid panic selling, consider increasing debt allocation temporarily.";
+  // Retirement
+  if(/retire|pension|nps|fire|financial.?freedom|corpus/i.test(m))
+    return "🎯 **Retirement Planning**\n\n**The 25x Rule:** Need 25× your annual expenses\n• Monthly spends ₹50K → Annual ₹6L → Corpus: **₹1.5 Crore**\n\n**The 4% Rule:** Withdraw 4% annually — lasts 30+ years\n\n**How to build it:**\n• **NPS** — extra ₹50K deduction, up to 75% equity. Lock-in till 60.\n• **PPF** — safe 7.1% component (₹1.5L/year)  \n• **Equity SIPs** — growth engine (10-14% CAGR)\n• **EPF** — employer contribution is free money!\n\n**The FIRE movement:**\nSave 50-70% of income, invest aggressively (80% equity), target 33-50× expenses\n\n📌 Starting ₹15,000 SIP at age 25 at 12% = **₹2.8 Crore at age 50**!";
 
-  if(m.includes("p/e")||m.includes("pe ratio"))
-    return "📐 **P/E Ratio** = Price ÷ Earnings. NIFTY 50 P/E of 20–22 is fair; >25 = overvalued; <18 = undervalued. Always compare within the same sector.";
+  // Personal finance / budgeting
+  if(/budget|50.?30.?20|expens|spend|emergency.?fund|saving/i.test(m))
+    return "💳 **Personal Finance Basics**\n\n**50-30-20 Rule:**\n• 50% → Needs (rent, food, EMIs, insurance)\n• 30% → Wants (dining, travel, entertainment)\n• 20% → Savings & Investments\n\n**Emergency Fund:** 6 months of expenses in a **Liquid Mutual Fund** (better than savings account — earns 6-7%).\n\n**Golden Financial Milestones:**\n• Age 25: Emergency fund + term insurance + start SIP\n• Age 30: ₹10L+ invested + health insurance\n• Age 35: ₹25L+ portfolio + home down payment\n• Age 40: ₹1Cr+ portfolio + child education fund\n\n**Free tracking apps:** Money View, Walnut, ET Money, INDmoney\n\n📌 **Pay yourself first** — automate investments on salary day before spending!";
 
-  if(m.includes("market cap"))
-    return "🏢 **Market Cap** = Price × Shares.\n• Large-cap: >₹20,000 Cr (TCS, Infosys) — stable\n• Mid-cap: ₹5,000–20,000 Cr — growth\n• Small-cap: <₹5,000 Cr — high risk, high reward";
+  // Crypto
+  if(/crypto|bitcoin|ethereum|blockchain|web3/i.test(m))
+    return "₿ **Cryptocurrency in India**\n\n**Tax:** 30% flat on crypto gains + 1% TDS on transactions >₹10,000. No offsetting losses.\n\n**Legal status:** Not illegal, not legal tender. SEBI/RBI don't protect investors.\n\n**Major cryptos:**\n• **Bitcoin (BTC)** — digital gold, finite supply\n• **Ethereum (ETH)** — smart contracts platform\n\n**Risks:**\n• 50-80% drawdowns are normal\n• Unregulated — exchange failures (FTX) happen\n• Highly volatile, speculative\n\n📌 Maximum 5% of portfolio in crypto. Only invest what you can afford to lose completely. InvestIQ focuses on regulated Indian market instruments.";
 
-  if(m.includes("inflation"))
-    return "📊 India's CPI inflation averages ~5–6% p.a. Investments MUST beat this. Equities (12–14% CAGR) do. FDs and savings accounts often fail to beat inflation after tax.";
+  // Real estate / REIT
+  if(/real.?estate|property|reit|rent.?vs.?buy|home.?loan/i.test(m))
+    return "🏠 **Real Estate Investment**\n\n**Direct Property:**\n• High entry (₹30L+ in metros)\n• Illiquid — hard to sell quickly\n• Returns: 6-8% appreciation + 2-3% rental yield = ~10%\n\n**REITs (Listed on NSE):**\n• Buy real estate exposure like a stock (min ~₹300)\n• Embassy REIT, Mindspace REIT, Nexus REIT\n• Distribution yield: 4-7% annually\n• Highly liquid, no management hassle\n\n**Rent vs Buy?**\nIf annual rent < 3% of property price → renting is better, invest the down payment in equity SIPs.\n\n📌 For most people, **REITs beat direct property** — lower entry, liquidity, passive income, no tenant headaches.";
 
-  if(m.includes("nifty")||m.includes("sensex"))
-    return "📈 **NIFTY 50** = top 50 NSE companies. **SENSEX** = top 30 BSE companies. NIFTY has returned ~12% CAGR over 20 years — ideal via index fund SIPs.";
+  // Help
+  if(/help|what can you|menu|commands/i.test(m))
+    return "🌟 **InvestIQ AI — What I Can Help With**\n\n**📊 Trading:**\n• Intraday / swing / positional trading strategies\n• Technical indicators: RSI, MACD, Bollinger Bands, EMA, Volume\n• Support/resistance, breakouts, options (F&O)\n\n**📈 Investing:**\n• SIP, mutual funds, ETFs, index funds, ELSS\n• Fundamental analysis: P/E, ROE, EPS\n• IPO, gold (SGBs), real estate, REITs, crypto\n\n**💰 Finance:**\n• Tax saving (80C, LTCG, STCG)\n• Retirement planning, NPS, PPF\n• Budgeting, emergency fund\n\n**🤖 AI Predictions:**\n• LSTM + XGBoost forecasts\n• Finnhub real-time prices\n• Analyst buy/sell ratings\n\nJust ask naturally! 🧠";
 
-  if(m.includes("budget")||m.includes("expense"))
-    return "💳 **50-30-20 Rule:**\n• 50% → Needs (rent, groceries, EMIs)\n• 30% → Wants (dining, travel)\n• 20% → Savings & Investments\n\nTrack spending with Money View, Walnut, or ET Money.";
+  // Thanks/bye
+  if(/thank|bye|goodbye|see you|take care/i.test(m))
+    return "😊 You're welcome! Remember:\n\n📌 **Invest regularly** — SIPs beat lump sums for most people\n📌 **Stay patient** — compounding rewards the patient\n📌 **Never panic-sell** — drawdowns are temporary, quality is permanent\n\nCome back anytime. Happy investing! 🚀";
 
-  if(m.includes("saving")||m.includes("emergency"))
-    return "🏦 Build a **6-month emergency fund** first (in liquid fund/savings account). Then automate investing via SIPs. Consistency beats timing!";
+  // Technical analysis general
+  if(/technical.?analysis|chart|candlestick|ta\b/i.test(m))
+    return "📊 **Technical Analysis (TA)** — deciding when to buy/sell using price charts.\n\n**Core tools:**\n• **Candlestick patterns** — Doji, Hammer, Engulfing, Morning Star\n• **Trend lines** — connect highs/lows to find direction\n• **Moving Averages** — EMA 20/50/200 for trend\n• **RSI** — momentum (oversold <30, overbought >70)\n• **MACD** — trend direction and momentum\n• **Volume** — confirms all price moves\n• **Bollinger Bands** — volatility and price extremes\n\n**Best free tools:** TradingView (screener + charts), Chartink (scan for patterns)\n\n📌 TA helps with TIMING. Fundamentals tell you WHAT to buy. Use both!";
 
-  if(m.includes("emi")||m.includes("loan")||m.includes("debt"))
-    return "🏠 Keep total EMIs below 40% of take-home pay. Pay off high-interest debt first (credit cards 18–24%). Never invest in equities with borrowed money.";
+  // Earnings / quarterly results
+  if(/earning|quarterly|result|q1|q2|q3|q4|revenue|profit/i.test(m))
+    return "📋 **Earnings & Quarterly Results**\n\nIndian companies report every quarter (April, July, October, January)\n\n**Key metrics to watch:**\n• **Revenue** — top-line growth (>10% YoY is good)\n• **Net Profit** — bottom-line\n• **EBITDA margin** — operational efficiency\n• **EPS** — earnings per share\n• **Guidance** — management outlook for next quarter\n\n**Around earnings:**\n• Stock often moves sharply — 'buy the rumour, sell the news'\n• IV (implied volatility) rises before results → options get expensive\n• If results beat expectations + guidance is positive → strong move UP\n\n📌 Check NSE/BSE website or Moneycontrol for live results.";
 
-  if(m.includes("tax"))
-    return "🧾 **Tax Saving (FY 2025–26):**\n• 80C (₹1.5L): ELSS, PPF, EPF, NSC\n• 80D (₹25K–75K): Health insurance\n• LTCG on equity: 10% above ₹1L\n• STCG: 15%\n\nConsider New Tax Regime if deductions <₹3.75L.";
-
-  if(m.includes("retire"))
-    return "🎯 **25x Rule:** Need 25× annual expenses to retire. For ₹6L/year → ₹1.5 Cr corpus. Use NPS for extra ₹50K deduction (80CCD). Start early — time is your greatest asset!";
-
-  if(m.includes("predict")||m.includes("forecast")||m.includes("how")&&m.includes("work"))
-    return "🤖 **InvestIQ uses 4 ML models:**\n1. **Bidirectional LSTM** — deep learning on sequences\n2. **XGBoost** — gradient boosting with early stopping\n3. **Random Forest** — decision tree ensemble\n4. **Polynomial Regression** — baseline trend\n\nWeighted ensemble (LSTM 40% + XGB 35% + RF 25%) gives the final forecast using 30+ technical indicators.";
-
-  if(m.includes("accuracy")||m.includes("how accurate"))
-    return "📐 Typical accuracy:\n• LSTM: R² ~0.92–0.97, MAPE ~2–4%\n• XGBoost: R² ~0.95–0.98, MAPE ~1.5–3%\n• Random Forest: R² ~0.93–0.97\n\n⚠️ Past accuracy ≠ future guarantee. Always use your own judgement.";
-
-  if(m.includes("ai")||m.includes("machine learning")||m.includes("model"))
-    return "🧠 InvestIQ uses **Python + TensorFlow/Keras** (LSTM), XGBoost, and scikit-learn. It processes 30+ technical indicators per stock with automatic model caching and retraining support.";
-
-  if(m.includes("help")||m.includes("what can you do"))
-    return "🌟 **I can help you with:**\n• Stock analysis & price forecasts\n• Mutual fund & SIP guidance\n• Risk profiling & portfolio allocation\n• Budgeting & personal finance tips\n• Market concepts (P/E, bull/bear, inflation)\n• Tax-saving strategies\n• Retirement planning\n\nType any question or use the sidebar topics!";
-
-  if(m.includes("thank")||m.includes("bye"))
-    return "😊 You're welcome! Remember: **consistent investing beats market timing**. Come back anytime. Happy investing! 🚀";
-
-  return "🤔 I didn't fully understand that. Try asking about:\nstocks, mutual funds, SIPs, risk, budgeting, tax saving, retirement, market trends, or how our AI works.\n\nOr type **help** to see everything I can do!";
+  // Default — helpful fallback
+  return "🤔 I'm your **InvestIQ AI** financial advisor!\n\nI can answer questions about:\n📊 **Trading** — intraday, swing, options, RSI, MACD, chart patterns\n📈 **Investing** — stocks, SIPs, mutual funds, ETFs, gold, crypto\n💰 **Finance** — tax saving, retirement, budgeting\n🤖 **AI** — predictions, risk scoring, analyst ratings\n\nTry asking: *\"What is intraday momentum?\"* or *\"How does RSI work?\"* or *\"Should I do SIP?\"*\n\nType **help** to see the full list!";
 }
 </script>
 

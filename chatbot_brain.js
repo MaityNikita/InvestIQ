@@ -3,6 +3,74 @@
 // ══════════════════════════════════════════════════
 const BRAIN = {};
 
+// ── Finnhub-powered investment recommendation ──
+BRAIN.investRecommend = async function(query, ctx) {
+  // Find the stock
+  const found = ctx.STOCKS.find(s =>
+    s.name.toLowerCase().includes(query) ||
+    s.symbol.toLowerCase().includes(query.toUpperCase())
+  );
+  if (!found) return null;
+
+  const st     = found ? ctx.S[found.symbol] : null;
+  const price  = st ? ctx.fmt(st.price) : '—';
+  const risk   = st ? Math.round(st.risk) : 50;
+  const pct    = st ? ((st.price - found.base) / found.base * 100).toFixed(2) : '0';
+  const riskTxt = risk >= 70 ? '🔴 High Risk' : risk >= 45 ? '🟡 Moderate Risk' : '🟢 Low Risk';
+
+  // Fetch Finnhub analyst recommendation
+  let analystBlock = '';
+  let mainVerdict  = '';
+  try {
+    const API = ctx.API || (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+      ? `${window.location.protocol}//${window.location.host}` : '');
+    const res  = await fetch(`${API}/api/finnhub/recommend?symbol=${found.symbol}`);
+    const rec  = await res.json();
+    if (rec && rec.verdict && !rec.error) {
+      const bPct = rec.buyPct + '%', hPct = rec.holdPct + '%', sPct = rec.sellPct + '%';
+      const emoji = rec.verdict === 'BUY' ? '✅' : rec.verdict === 'SELL' ? '❌' : '⚠️';
+      mainVerdict = rec.verdict;
+      analystBlock = `\n\n📊 **Wall Street Analyst Consensus** (${rec.period || 'Latest'})\n` +
+        `• **Strong Buy + Buy:** ${rec.strongBuy + rec.buy} analysts (${bPct})\n` +
+        `• **Hold:** ${rec.hold} analysts (${hPct})\n` +
+        `• **Sell + Strong Sell:** ${rec.strongSell + rec.sell} analysts (${sPct})\n` +
+        `${emoji} **Analyst Verdict: ${rec.verdict}**`;
+    } else {
+      analystBlock = `\n\n📊 **Analyst Data:** Not available for this stock via Finnhub.`;
+      mainVerdict = risk < 40 && parseFloat(pct) > 0 ? 'BUY' : risk > 65 ? 'SELL' : 'HOLD';
+    }
+  } catch(e) {
+    analystBlock = `\n\n📊 **Analyst Data:** Could not fetch — Flask server may be offline.`;
+    mainVerdict = risk < 40 && parseFloat(pct) > 0 ? 'BUY' : risk > 65 ? 'SELL' : 'HOLD';
+  }
+
+  // Build InvestIQ AI verdict based on risk + momentum
+  let iqVerdict = '';
+  if (risk < 40 && parseFloat(pct) >= 0)
+    iqVerdict = `🟢 **InvestIQ AI says: Strong Buy candidate.** Low risk, steady momentum.`;
+  else if (risk < 55 && parseFloat(pct) >= -2)
+    iqVerdict = `🟡 **InvestIQ AI says: Hold / Accumulate on dips.** Moderate risk, reasonable entry.`;
+  else if (risk >= 55 && parseFloat(pct) > 8)
+    iqVerdict = `🟡 **InvestIQ AI says: Partial Profit Booking advised.** Risk elevated, gains significant.`;
+  else if (risk >= 65)
+    iqVerdict = `🔴 **InvestIQ AI says: High caution. Avoid fresh entry.** Risk score ${risk}/100.`;
+  else
+    iqVerdict = `⚠️ **InvestIQ AI says: Neutral — wait for clearer trend.** Review again after earnings.`;
+
+  return `## 📈 Investment Analysis: **${found.name}** (${found.symbol})\n\n` +
+    `💰 **Live Price:** ₹${price}  |  **Day Change:** ${parseFloat(pct) >= 0 ? '+' : ''}${pct}%\n` +
+    `🎯 **Risk Score:** ${risk}/100 ${riskTxt}` +
+    analystBlock +
+    `\n\n${iqVerdict}\n\n` +
+    `**📋 Key Factors to Consider:**\n` +
+    `• Compare P/E ratio with industry peers\n` +
+    `• Check latest quarterly earnings trend\n` +
+    `• Review promoter holding changes\n` +
+    `• Set a stop-loss at 7-8% below your buy price\n` +
+    `• Invest only what you can hold for 1-3 years\n\n` +
+    `⚠️ *This is AI-generated analysis, not financial advice. Always do your own research before investing.*`;
+};
+
 // ── Stock-specific analysis using live data ──
 BRAIN.analyzeStock = function(query, STOCKS, S, HOLDINGS, fmt){
   const found = STOCKS.find(s=> s.name.toLowerCase().includes(query) || s.symbol.toLowerCase().includes(query));
@@ -38,6 +106,32 @@ BRAIN.analyzeStock = function(query, STOCKS, S, HOLDINGS, fmt){
 
 // ── Comprehensive Knowledge Base ──
 BRAIN.KB = [
+  // ── INVEST RECOMMENDATION (Finnhub-powered) — check first ──
+  {match: s => /should.+i.+invest|buy.+now|is.+good.+buy|should.+buy|worth.+buy|invest.+in|buy.+or.+sell|good.+invest|recommend.+stock|buy.+stock|purchase/i.test(s),
+   handler: async (m, ctx) => {
+     // Extract stock name from the message
+     const stockNames = ['tcs','infosys','infy','wipro','hcl','hcltech','reliance','hdfc','icici','bajaj','itc','maruti','techm','tech mahindra','sunpharma','tata motors','tatamotors','lt','l&t','axis','kotak','sbi'];
+     let found = null;
+     for (const n of stockNames) {
+       if (m.toLowerCase().includes(n)) {
+         found = n;
+         break;
+       }
+     }
+     if (!found) {
+       // Just generic "should I invest?"
+       return `**📊 Should You Invest Right Now?**\n\nHere's how to decide:\n\n` +
+         `1️⃣ **Check your emergency fund** — 6 months of expenses saved? ✅\n` +
+         `2️⃣ **Investment horizon** — Can you stay invested for 3+ years? ✅\n` +
+         `3️⃣ **Risk tolerance** — Will you panic-sell in a crash? ❌\n` +
+         `4️⃣ **Market valuation** — NIFTY P/E above 25 = slightly expensive; below 18 = cheap\n\n` +
+         `💡 **Ask me about a specific stock:** *"Should I invest in TCS?"* or *"Is Infosys a good buy?"*\n\n` +
+         `Our AI pulls **live Finnhub analyst ratings** + risk scores to give you a data-driven answer!`;
+     }
+     const result = await BRAIN.investRecommend(found, ctx);
+     return result || null;
+   }},
+
   // Stock specific - any stock name mentioned
   {match: s => {
     const stockNames = ['tcs','infosys','wipro','hcl','reliance','hdfc','icici','bajaj','itc','maruti',
@@ -219,45 +313,34 @@ BRAIN.KB = [
   {match: s => /ai|machine.?learn|lstm|model|xgboost|prediction|how.?work|algorithm|neural|deep.?learn|shap/i.test(s),
    resp: `**🤖 InvestIQ AI Engine**\n\nOur prediction system uses **4 ML models** in an ensemble:\n\n**1. Bidirectional LSTM** (40% weight)\n• Deep learning on price sequences\n• Captures long-term temporal patterns\n• Input: 60-day price windows\n\n**2. XGBoost** (35% weight)\n• Gradient boosted decision trees\n• Best for tabular financial data\n• Handles missing data gracefully\n\n**3. Random Forest** (25% weight)\n• Ensemble of 500+ decision trees\n• Robust against overfitting\n\n**Features used (30+):**\nRSI, MACD, Bollinger Bands, OBV, ATR, Moving Averages (5/10/20/50/200-day), Volume ratios, Price momentum, Stochastic oscillator, Williams %R, and more.\n\n**SHAP Analysis:**\nWe use SHAP (SHapley Additive exPlanations) to explain WHY each prediction is made — showing which features drove the decision.\n\n**Accuracy:** R² ~0.92-0.98, MAPE ~1.5-4% depending on stock and timeframe.\n\n⚠️ ML predictions are probabilistic estimates, not guarantees. Always combine with fundamental analysis.`},
 
-  // Greetings
-  {match: s => /^(hi|hello|hey|good|namaste|hola)[\s!.,]*/i.test(s),
-   resp: `Hello! 👋 I'm your **InvestIQ AI Assistant** — your personal stock market expert!\n\nI can help you with:\n📊 **Live stock analysis** — prices, risk, and trends from the dashboard\n📈 **Trading concepts** — intraday, swing trading, options, futures\n📚 **Investment education** — SIP, mutual funds, ETFs, bonds\n🧮 **Financial planning** — tax saving, retirement, budgeting\n🤖 **AI predictions** — LSTM forecasts for any tracked stock\n\nJust ask anything about stocks or investing!`},
-
-  // Thank you / goodbye
-  {match: s => /thank|bye|goodbye|see you|take care/i.test(s),
-   resp: `You're welcome! 😊 Remember:\n\n📌 **Invest regularly** (SIP > lump sum for most people)\n📌 **Stay patient** (compounding needs time)\n📌 **Never panic sell** (crashes are temporary, quality is permanent)\n\nCome back anytime for market insights. Happy investing! 🚀`},
-
-  // Help
-  {match: s => /help|what can|menu|commands|features/i.test(s),
-   resp: `**🌟 InvestIQ AI — Complete Guide**\n\n**📊 Live Data (uses your dashboard):**\n• "What is TCS price?" — live stock analysis\n• "Risk analysis" — all stocks risk breakdown\n• "Show my P&L" — portfolio summary\n• "What's trending?" — top gainers & losers\n• "Compare TCS vs Infosys" — side by side\n\n**🔮 Predictions:**\n• "Predict TCS" — 7-day ML forecast\n\n**📚 Investment Topics:**\n• SIP, mutual funds, ETFs, bonds, gold, IPO\n• Options & futures, technical analysis\n• Fundamental analysis, P/E ratio, ROE\n• Tax saving, Section 80C, LTCG/STCG\n• Retirement planning, FIRE\n• Budgeting, emergency fund\n• Real estate, REITs, crypto\n• Sector analysis, market indices\n• Bull/bear markets, dividends\n• SEBI regulations, demat accounts\n\nJust ask naturally — I understand questions like a human! 🧠`},
-];
-
-// ── Main lookup function ──
+// ── Main lookup function (Gemini-first, KB fallback) ──
 BRAIN.getResponse = async function(input, ctx){
   const m = input.toLowerCase();
+  const API = ctx.API || (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? `${window.location.protocol}//${window.location.host}` : '');
 
-  // Try knowledge base entries
+  // ── 1. Live dashboard KB entries (always run first for data-backed answers) ──
   for(const entry of BRAIN.KB){
     if(typeof entry.match === 'function' ? entry.match(m) : entry.match.test(m)){
       if(entry.handler){
-        const result = entry.handler(m, ctx);
+        const result = await Promise.resolve(entry.handler(m, ctx));
         if(result) return result;
       }
       if(entry.resp) return entry.resp;
     }
   }
 
-  // Prediction queries — call API
+  // ── 2. Prediction queries — call ML API ──
   if(m.includes('predict') || m.includes('forecast') || m.includes('future')){
     const tickerMatch = m.match(/(?:predict|forecast).*?([a-z]+)/i);
     let ticker = 'TCS.NS';
     if(tickerMatch){
       const q = tickerMatch[1].toLowerCase();
-      const found = ctx.STOCKS.find(s=> s.name.toLowerCase().includes(q) || s.symbol.toLowerCase().includes(q));
+      const found = ctx.STOCKS.find(s=>s.name.toLowerCase().includes(q) || s.symbol.toLowerCase().includes(q));
       if(found) ticker = found.symbol;
     }
     try{
-      const res = await fetch(`${ctx.API}/api/predict?ticker=${ticker}&days=7`);
+      const res = await fetch(`${API}/api/predict?ticker=${ticker}&days=7`);
       const data = await res.json();
       if(data.predictions && data.predictions.length){
         const stock = ctx.STOCKS.find(s=>s.symbol===ticker);
@@ -265,12 +348,36 @@ BRAIN.getResponse = async function(input, ctx){
         return `**🔮 Prediction for ${name}** (next 7 days)\n\n${data.predictions.map((p,i)=>`Day ${i+1}: ₹${p.predicted_price.toFixed(2)}`).join('\n')}\n\n⚠️ ML predictions are not financial advice.`;
       }
     }catch(e){}
-    return `I tried to fetch predictions for **${ticker}** but the model isn't available right now. The prediction engine requires trained model files.`;
   }
 
-  // Fallback — try the backend chatbot
+  // ── 3. Gemini AI — primary intelligent response ──
   try{
-    const res = await fetch(`${ctx.API}/api/chat`, {
+    const history = (ctx._chatHistory || []).slice(-8).map(h => ({
+      role: h.role, text: h.text
+    }));
+
+    let enrichedMsg = input;
+    if(ctx.STOCKS && ctx.S){
+      const topStocks = ctx.STOCKS.slice(0,5).map(s=>{
+        const st = ctx.S[s.symbol];
+        const pct = ((st.price - s.base)/s.base*100).toFixed(1);
+        return `${s.name}: ₹${Math.round(st.price)} (${pct>0?'+':''}${pct}%, risk ${Math.round(st.risk)}/100)`;
+      }).join('; ');
+      enrichedMsg = `[Live Dashboard Context — ${new Date().toLocaleTimeString('en-IN')}: ${topStocks}]\n\nUser question: ${input}`;
+    }
+
+    const res = await fetch(`${API}/api/gemini`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({message: enrichedMsg, history})
+    });
+    const data = await res.json();
+    if(data.ok && data.reply) return data.reply;
+  }catch(e){}
+
+  // ── 4. Fallback — rule-based backend ──
+  try{
+    const res = await fetch(`${API}/api/chat`, {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({message: input})
     });
@@ -278,12 +385,6 @@ BRAIN.getResponse = async function(input, ctx){
     if(data.reply && !data.reply.includes("didn't fully understand")) return data.reply;
   }catch(e){}
 
-  // Smart fallback — try to find relevant topic
-  const topics = [
-    {keys:['stock','share','equity','buy','sell','trade'], suggest:'Try asking about a specific stock (e.g. "TCS analysis") or trading concept (e.g. "what is intraday trading")'},
-    {keys:['money','finance','wealth','bank','account'], suggest:'Try asking about investing basics, SIPs, mutual funds, or budgeting tips'},
-    {keys:['market','index','economy'], suggest:'Try asking about NIFTY, SENSEX, bull/bear markets, or sector analysis'},
-  ];
   for(const t of topics){
     if(t.keys.some(k=>m.includes(k))) return `🤔 I'm not sure about that specific question, but I have extensive knowledge on the topic.\n\n${t.suggest}\n\nOr type **help** to see everything I can answer!`;
   }

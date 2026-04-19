@@ -874,8 +874,8 @@
   </ul>
   <div class="nav-right">
     <div class="nav-user-chip">
-      <div class="nav-user-avatar">N</div>
-      <span>Nikita</span>
+      <div class="nav-user-avatar" id="navAvatarLetter">N</div>
+      <span id="navUserName">Nikita</span>
     </div>
     <a href="index.html" class="nav-back">← Back</a>
   </div>
@@ -953,7 +953,7 @@
         <div class="card-title"><div class="card-title-icon">🖼️</div> Profile Picture</div>
         <div class="avatar-row">
           <div class="avatar-big" id="profileAvatar" title="Change photo">
-            N
+            <span id="profileAvatarLetter">N</span>
             <span class="avatar-edit-badge">✏️</span>
           </div>
           <div class="avatar-info">
@@ -969,28 +969,28 @@
         <div class="form-grid">
           <div class="field">
             <label class="field-label">First Name</label>
-            <input class="field-input" type="text" value="Nikita" placeholder="First name">
+            <input id="fieldFirstName" class="field-input" type="text" placeholder="First name">
           </div>
           <div class="field">
             <label class="field-label">Last Name</label>
-            <input class="field-input" type="text" value="Sharma" placeholder="Last name">
+            <input id="fieldLastName" class="field-input" type="text" placeholder="Last name">
           </div>
           <div class="field">
             <label class="field-label">Display Name</label>
-            <input class="field-input" type="text" value="Nikita S." placeholder="How you appear">
+            <input id="fieldDisplayName" class="field-input" type="text" placeholder="How you appear">
           </div>
           <div class="field">
             <label class="field-label">Date of Birth</label>
-            <input class="field-input" type="date" value="2003-06-15">
+            <input id="fieldDob" class="field-input" type="date">
           </div>
           <div class="field" style="grid-column: 1/-1;">
             <label class="field-label">Bio</label>
-            <textarea class="field-input" placeholder="Tell us a bit about yourself…">B.Tech CSE student at Medicaps University, passionate about AI and investing.</textarea>
+            <textarea id="fieldBio" class="field-input" placeholder="Tell us a bit about yourself…"></textarea>
           </div>
         </div>
         <div class="card-footer">
-          <span class="footer-hint">Last updated 2 days ago</span>
-          <button class="btn-save" onclick="showToast()">Save Changes →</button>
+          <span class="footer-hint">Last updated —</span>
+          <button class="btn-save" onclick="saveProfile('personal')">Save Changes →</button>
         </div>
       </div>
 
@@ -1000,20 +1000,20 @@
         <div class="form-grid">
           <div class="field">
             <label class="field-label">Email Address</label>
-            <input class="field-input" type="email" value="nikita@example.com" placeholder="your@email.com">
+            <input id="fieldEmail" class="field-input" type="email" placeholder="your@email.com" readonly style="opacity:0.6;cursor:not-allowed;">
           </div>
           <div class="field">
             <label class="field-label">Phone Number</label>
-            <input class="field-input" type="tel" value="+91 98765 43210" placeholder="+91 XXXXX XXXXX">
+            <input id="fieldPhone" class="field-input" type="tel" placeholder="+91 XXXXX XXXXX">
           </div>
           <div class="field">
             <label class="field-label">City</label>
-            <input class="field-input" type="text" value="Indore" placeholder="Your city">
+            <input id="fieldCity" class="field-input" type="text" placeholder="Your city">
           </div>
           <div class="field">
             <label class="field-label">Country</label>
-            <select class="field-input">
-              <option value="IN" selected>India</option>
+            <select id="fieldCountry" class="field-input">
+              <option value="IN">India</option>
               <option value="US">United States</option>
               <option value="UK">United Kingdom</option>
               <option value="SG">Singapore</option>
@@ -1023,7 +1023,7 @@
         </div>
         <div class="card-footer">
           <span class="footer-hint"><span class="badge badge-sky">Verified</span> &nbsp;Email is verified</span>
-          <button class="btn-save" onclick="showToast()">Save Changes →</button>
+          <button class="btn-save" onclick="saveProfile('contact')">Save Changes →</button>
         </div>
       </div>
 
@@ -1033,24 +1033,24 @@
         <div class="form-grid">
           <div class="field">
             <label class="field-label">LinkedIn</label>
-            <input class="field-input" type="url" placeholder="https://linkedin.com/in/yourname">
+            <input id="fieldLinkedin" class="field-input" type="url" placeholder="https://linkedin.com/in/yourname">
           </div>
           <div class="field">
             <label class="field-label">Twitter / X</label>
-            <input class="field-input" type="url" placeholder="https://x.com/yourhandle">
+            <input id="fieldTwitter" class="field-input" type="url" placeholder="https://x.com/yourhandle">
           </div>
           <div class="field">
             <label class="field-label">GitHub</label>
-            <input class="field-input" type="url" placeholder="https://github.com/yourusername">
+            <input id="fieldGithub" class="field-input" type="url" placeholder="https://github.com/yourusername">
           </div>
           <div class="field">
             <label class="field-label">Portfolio / Website</label>
-            <input class="field-input" type="url" placeholder="https://yoursite.com">
+            <input id="fieldWebsite" class="field-input" type="url" placeholder="https://yoursite.com">
           </div>
         </div>
         <div class="card-footer">
           <span class="footer-hint">Shown on your public investor profile</span>
-          <button class="btn-save" onclick="showToast()">Save Changes →</button>
+          <button class="btn-save" onclick="saveProfile('social')">Save Changes →</button>
         </div>
       </div>
     </div>
@@ -1669,7 +1669,21 @@
 </div>
 
 <script>
-  // ── PAGE SWITCHING ───────────────────────────────
+  // ── API base ─────────────────────────────────────────
+  const API = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost'
+    ? `${window.location.protocol}//${window.location.host}` : '';
+
+  // ── Get token from localStorage ──────────────────────
+  function getToken() {
+    return localStorage.getItem('iq_token') || sessionStorage.getItem('iq_token') || '';
+  }
+
+  // ── Auth headers helper ──────────────────────────────
+  function authHeaders() {
+    return { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` };
+  }
+
+  // ── PAGE SWITCHING ───────────────────────────────────
   function switchPage(id, el) {
     document.querySelectorAll('.settings-page').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.sidebar-item').forEach(s => s.classList.remove('active'));
@@ -1677,73 +1691,215 @@
     el.classList.add('active');
   }
 
-  // ── TOAST ────────────────────────────────────────
-  function showToast() {
+  // ── TOAST ────────────────────────────────────────────
+  function showToast(msg, ok = true) {
     const t = document.getElementById('saveToast');
+    t.innerHTML = ok ? `✓ &nbsp;${msg || 'Changes saved successfully'}` : `✗ &nbsp;${msg || 'Save failed'}`;
+    t.style.borderColor = ok ? 'rgba(0,217,126,0.3)' : 'rgba(255,107,107,0.3)';
+    t.style.color = ok ? 'var(--emerald)' : 'var(--coral)';
     t.classList.add('show');
-    setTimeout(() => t.classList.remove('show'), 2800);
+    setTimeout(() => t.classList.remove('show'), 3000);
   }
 
-  // ── PILL TOGGLE ──────────────────────────────────
-  function togglePill(el) {
-    el.classList.toggle('selected');
-  }
-
+  // ── PILL TOGGLE ──────────────────────────────────────
+  function togglePill(el) { el.classList.toggle('selected'); }
   function togglePillColor(el, color) {
     el.classList.toggle('selected-' + color);
     el.classList.remove('selected');
-    if (!el.classList.contains('selected-' + color)) {
-      // was active, now off - nothing else needed
-    }
   }
 
-  // ── RISK SLIDER ──────────────────────────────────
+  // ── RISK SLIDER ──────────────────────────────────────
   function updateRisk(val) {
     const badge = document.getElementById('riskBadge');
-    const labels = ['', 'Low Risk', 'Moderate Risk', 'High Risk'];
-    const classes = ['', 'risk-low', 'risk-medium', 'risk-high'];
-    badge.textContent = labels[val];
-    badge.className = 'risk-value-badge ' + classes[val];
+    badge.textContent = ['', 'Low Risk', 'Moderate Risk', 'High Risk'][val];
+    badge.className   = 'risk-value-badge ' + ['', 'risk-low', 'risk-medium', 'risk-high'][val];
   }
 
-  // ── PASSWORD STRENGTH ────────────────────────────
+  // ── PASSWORD STRENGTH ────────────────────────────────
   function checkPwStrength(val) {
     const bars = [document.getElementById('pwb1'), document.getElementById('pwb2'), document.getElementById('pwb3')];
     bars.forEach(b => b.className = 'pw-bar');
     if (!val) return;
-    if (val.length >= 4) bars[0].classList.add('weak');
-    if (val.length >= 8) bars[1].classList.add('medium');
+    if (val.length >= 4)  bars[0].classList.add('weak');
+    if (val.length >= 8)  { bars[0].className = 'pw-bar medium'; bars[1].classList.add('medium'); }
     if (val.length >= 12 && /[^a-zA-Z0-9]/.test(val)) bars[2].classList.add('strong');
-    else if (val.length >= 8) {
-      bars[0].classList.replace('weak', 'medium');
-      bars[1].classList.add('medium');
-    }
   }
 
-  // ── DELETE CONFIRM ───────────────────────────────
+  // ── DELETE CONFIRM ───────────────────────────────────
   function checkDelete(val) {
     document.getElementById('deleteBtn').disabled = (val !== 'DELETE');
   }
 
-  // ── HASH-BASED ROUTING (optional deep links) ─────
+  // ── HASH-BASED ROUTING ───────────────────────────────
   function routeFromHash() {
-    const map = { '#profile': 'profile', '#privacy': 'privacy', '#account': 'account', '#preferences': 'preferences', '#notifications': 'notifications', '#security': 'security', '#appearance': 'appearance', '#help': 'help', '#danger': 'danger' };
+    const map = { '#profile':'profile','#privacy':'privacy','#account':'account','#preferences':'preferences','#notifications':'notifications','#security':'security','#appearance':'appearance','#help':'help','#danger':'danger' };
     const target = map[window.location.hash];
     if (target) {
       const el = document.querySelector(`.sidebar-item[onclick*="'${target}'"]`);
       if (el) switchPage(target, el);
     }
   }
-
   window.addEventListener('hashchange', routeFromHash);
-  document.addEventListener('DOMContentLoaded', routeFromHash);
 
-  // ── THEME TOGGLE ──────────────────────────────────
+  // ── THEME TOGGLE ─────────────────────────────────────
   document.querySelectorAll('.theme-option').forEach(opt => {
     opt.addEventListener('click', function() {
       document.querySelectorAll('.theme-option').forEach(o => o.classList.remove('selected'));
       this.classList.add('selected');
     });
+  });
+
+  // ════════════════════════════════════════════════════════
+  //  PROFILE SYNC — Load from backend
+  // ════════════════════════════════════════════════════════
+  let _profile = {};   // cached loaded profile
+
+  async function loadProfile() {
+    const token = getToken();
+    if (!token) {
+      // Not logged in — show guest state
+      document.getElementById('navUserName').textContent = 'Guest';
+      document.getElementById('navAvatarLetter').textContent = 'G';
+      document.getElementById('profileAvatarLetter').textContent = 'G';
+      return;
+    }
+
+    try {
+      const res  = await fetch(`${API}/api/profile`, { headers: authHeaders() });
+      const data = await res.json();
+      if (!data.ok || !data.profile) return;
+
+      const p = data.profile;
+      _profile  = p;
+
+      // ── Nav chip ──────────────────────────────────────
+      const displayName = p.displayName || p.name || 'User';
+      document.getElementById('navUserName').textContent    = displayName.split(' ')[0];
+      document.getElementById('navAvatarLetter').textContent = displayName[0].toUpperCase();
+
+      // ── Profile page ─────────────────────────────────
+      document.getElementById('profileAvatarLetter').textContent = displayName[0].toUpperCase();
+
+      _setVal('fieldFirstName',   p.firstName   || (p.name || '').split(' ')[0] || '');
+      _setVal('fieldLastName',    p.lastName    || (p.name || '').split(' ').slice(1).join(' ') || '');
+      _setVal('fieldDisplayName', p.displayName || p.name || '');
+      _setVal('fieldDob',         p.dob         || '');
+      _setVal('fieldBio',         p.bio         || '');
+
+      // Contact
+      _setVal('fieldEmail',   p.email   || '');
+      _setVal('fieldPhone',   p.phone   || '');
+      _setVal('fieldCity',    p.city    || '');
+      _setVal('fieldCountry', p.country || 'IN');
+
+      // Social
+      _setVal('fieldLinkedin', p.linkedin || '');
+      _setVal('fieldTwitter',  p.twitter  || '');
+      _setVal('fieldGithub',   p.github   || '');
+      _setVal('fieldWebsite',  p.website  || '');
+
+      // Preferences
+      if (p.riskLevel) {
+        const sliderEl = document.getElementById('riskSlider');
+        if (sliderEl) { sliderEl.value = p.riskLevel; updateRisk(p.riskLevel); }
+      }
+      if (p.monthlyBudget) _setVal('fieldMonthlyBudget', p.monthlyBudget);
+      if (p.currency)      _setVal('fieldCurrency', p.currency);
+
+      // Last updated
+      if (p.updatedAt) {
+        const ago = _timeAgo(p.updatedAt);
+        document.querySelectorAll('.footer-hint').forEach(el => {
+          if (el.textContent.includes('updated')) el.textContent = `Last updated ${ago}`;
+        });
+      }
+
+    } catch (e) {
+      console.warn('[InvestIQ Settings] Could not load profile:', e.message);
+    }
+  }
+
+  function _setVal(id, val) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.value = val;
+  }
+
+  function _timeAgo(iso) {
+    const diff = (Date.now() - new Date(iso).getTime()) / 1000;
+    if (diff < 60)   return 'just now';
+    if (diff < 3600) return `${Math.floor(diff/60)} min ago`;
+    if (diff < 86400) return `${Math.floor(diff/3600)}h ago`;
+    return `${Math.floor(diff/86400)} days ago`;
+  }
+
+  // ════════════════════════════════════════════════════════
+  //  PROFILE SAVE — Push to backend
+  // ════════════════════════════════════════════════════════
+  async function saveProfile(section) {
+    const token = getToken();
+    if (!token) { showToast('Please log in to save settings.', false); return; }
+
+    let body = {};
+
+    if (section === 'personal') {
+      const firstName   = document.getElementById('fieldFirstName')?.value.trim()   || '';
+      const lastName    = document.getElementById('fieldLastName')?.value.trim()    || '';
+      body = {
+        firstName,
+        lastName,
+        name:        `${firstName} ${lastName}`.trim(),
+        displayName: document.getElementById('fieldDisplayName')?.value.trim() || `${firstName} ${lastName}`.trim(),
+        dob:         document.getElementById('fieldDob')?.value         || '',
+        bio:         document.getElementById('fieldBio')?.value.trim()  || '',
+      };
+    } else if (section === 'contact') {
+      body = {
+        phone:   document.getElementById('fieldPhone')?.value.trim()   || '',
+        city:    document.getElementById('fieldCity')?.value.trim()    || '',
+        country: document.getElementById('fieldCountry')?.value        || 'IN',
+      };
+    } else if (section === 'social') {
+      body = {
+        linkedin: document.getElementById('fieldLinkedin')?.value.trim() || '',
+        twitter:  document.getElementById('fieldTwitter')?.value.trim()  || '',
+        github:   document.getElementById('fieldGithub')?.value.trim()   || '',
+        website:  document.getElementById('fieldWebsite')?.value.trim()  || '',
+      };
+    } else if (section === 'preferences') {
+      body = {
+        riskLevel:     parseInt(document.getElementById('riskSlider')?.value || 2),
+        monthlyBudget: document.getElementById('fieldMonthlyBudget')?.value || '',
+        currency:      document.getElementById('fieldCurrency')?.value || 'INR',
+      };
+    }
+
+    try {
+      const res  = await fetch(`${API}/api/profile`, {
+        method: 'PATCH',
+        headers: authHeaders(),
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        _profile = data.profile;
+        // Update nav chip name
+        const displayName = data.profile.displayName || data.profile.name || 'User';
+        document.getElementById('navUserName').textContent     = displayName.split(' ')[0];
+        document.getElementById('navAvatarLetter').textContent = displayName[0].toUpperCase();
+        showToast('Changes saved successfully');
+      } else {
+        showToast(data.error || 'Save failed', false);
+      }
+    } catch (e) {
+      showToast('Network error — could not save.', false);
+    }
+  }
+
+  // ── Boot: load profile then route ────────────────────
+  document.addEventListener('DOMContentLoaded', () => {
+    loadProfile();
+    routeFromHash();
   });
 </script>
 </body>

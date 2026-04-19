@@ -31,6 +31,13 @@ from datetime import datetime, timezone, timedelta
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 
+# ── Load .env (python-dotenv) ─────────────────────────────────────────────────
+try:
+    from dotenv import load_dotenv
+    load_dotenv()  # loads .env from project root automatically
+except ImportError:
+    pass  # dotenv not installed; rely on system environment variables
+
 app = Flask(__name__, static_folder=".", static_url_path="")
 CORS(app, supports_credentials=True)  # Allow frontend to call the API
 
@@ -215,11 +222,85 @@ def api_me():
         return jsonify({"error": "No token provided."}), 401
     try:
         payload = _decode_token(token)
+        # Return enriched profile from users.json
+        users = _load_json(USERS_FILE)
+        user  = next((u for u in users if u["id"] == payload["sub"]), None)
+        if user:
+            safe = {k: v for k, v in user.items() if k != "password_hash"}
+            return jsonify({"user": safe})
         return jsonify({"user": {"id": payload["sub"], "name": payload["name"], "email": payload["email"]}})
     except jwt.ExpiredSignatureError:
         return jsonify({"error": "Token expired."}), 401
     except jwt.InvalidTokenError:
         return jsonify({"error": "Invalid token."}), 401
+
+
+@app.route("/api/profile", methods=["GET"])
+def api_profile_get():
+    """
+    GET /api/profile
+    Header: Authorization: Bearer <token>
+    Returns the full profile for the logged-in user.
+    """
+    token = _get_bearer()
+    if not token:
+        return jsonify({"error": "Not authenticated."}), 401
+    try:
+        payload = _decode_token(token)
+    except Exception:
+        return jsonify({"error": "Invalid token."}), 401
+
+    users = _load_json(USERS_FILE)
+    user  = next((u for u in users if u["id"] == payload["sub"]), None)
+    if not user:
+        return jsonify({"error": "User not found."}), 404
+
+    safe = {k: v for k, v in user.items() if k != "password_hash"}
+    return jsonify({"ok": True, "profile": safe})
+
+
+@app.route("/api/profile", methods=["PATCH"])
+def api_profile_patch():
+    """
+    PATCH /api/profile
+    Header: Authorization: Bearer <token>
+    Body: any subset of profile fields to update.
+    Updatable: name, firstName, lastName, displayName, dob, bio,
+               phone, city, country, linkedin, twitter, github, website,
+               riskLevel, investmentGoals, preferredSectors, monthlyBudget,
+               currency, notifications (object).
+    """
+    token = _get_bearer()
+    if not token:
+        return jsonify({"error": "Not authenticated."}), 401
+    try:
+        payload = _decode_token(token)
+    except Exception:
+        return jsonify({"error": "Invalid token."}), 401
+
+    body  = request.get_json(force=True, silent=True) or {}
+    users = _load_json(USERS_FILE)
+    idx   = next((i for i, u in enumerate(users) if u["id"] == payload["sub"]), None)
+    if idx is None:
+        return jsonify({"error": "User not found."}), 404
+
+    # Allowed fields (whitelist — never allow password_hash or id update)
+    ALLOWED = {
+        "name", "firstName", "lastName", "displayName", "dob", "bio",
+        "phone", "city", "country", "linkedin", "twitter", "github", "website",
+        "riskLevel", "investmentGoals", "preferredSectors", "monthlyBudget",
+        "currency", "notifications", "theme",
+    }
+    for key, val in body.items():
+        if key in ALLOWED:
+            users[idx][key] = val
+
+    users[idx]["updatedAt"] = datetime.now(timezone.utc).isoformat()
+    _save_json(USERS_FILE, users)
+
+    safe = {k: v for k, v in users[idx].items() if k != "password_hash"}
+    return jsonify({"ok": True, "profile": safe})
+
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -361,24 +442,136 @@ def api_compare():
         return jsonify({"error": str(exc)}), 500
 
 
-# ── 4. CHATBOT NLP ────────────────────────────────────────────────────────────
+# ── 4. CHATBOT NLP (Gemini-powered) ─────────────────────────────────────────
+
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
+GEMINI_URL     = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
+
+GEMINI_SYSTEM_PROMPT = """
+You are InvestIQ AI — an expert financial advisor built into the InvestIQ platform for Indian stock market investors.
+
+Your expertise covers:
+- Indian equity markets (NSE & BSE): NIFTY 50, SENSEX, BANK NIFTY, India VIX
+- Stocks: TCS, Infosys, Wipro, HCL Tech, Reliance, HDFC Bank, ICICI Bank, Bajaj Finance, ITC, Maruti, and all NIFTY 50 companies
+- Mutual Funds, SIPs, ETFs, Index Funds, ELSS
+- Technical analysis: RSI, MACD, Bollinger Bands, Moving Averages, Volume
+- Fundamental analysis: P/E, EPS, ROE, ROCE, Debt-to-Equity, Book Value
+- Investment strategies: intraday, swing trading, long-term investing, value investing
+- Personal finance: budgeting, emergency funds, insurance, retirement planning
+- Tax planning: LTCG, STCG, Section 80C, 80D, ELSS, PPF, NPS
+- Derivatives: Options, Futures, F&O strategies
+- Global macros: Fed rates, DXY, crude oil impact on Indian markets
+- Real estate, REITs, Gold (SGBs, ETFs), Crypto regulations in India
+- SEBI regulations, IPO process, demat accounts
+
+InvestIQ platform features you have access to context about:
+- Live Finnhub-powered real-time stock prices (15-second refresh)
+- Analyst buy/sell/hold recommendations via Finnhub
+- LSTM + XGBoost ML price predictions
+- NewsAPI financial news feed
+- Risk scoring per stock (0-100 scale)
+- Portfolio P&L tracking
+
+Rules:
+1. Be helpful, accurate, and specific. Use Indian context (INR, NSE/BSE, SEBI, RBI).
+2. For stock investment questions: give risk context, analyst consensus, and clear advice.
+3. Format with markdown (bold, bullets) for readability.
+4. Add disclaimer for specific investment advice (not financial advice).
+5. Keep responses 150-350 words. Be conversational and encouraging.
+6. If you lack real-time data, say so and direct user to the InvestIQ Live Dashboard.
+""".strip()
+
+
+def _gemini_chat(message: str, history: list = None) -> str:
+    """
+    Call Google Gemini 1.5 Flash API with full InvestIQ system prompt.
+    history: list of {"role": "user"|"model", "text": str}
+    Returns the model reply as a plain string.
+    """
+    import urllib.request
+
+    contents = []
+    # Inject system prompt as priming user/model pair
+    contents.append({"role": "user",  "parts": [{"text": "System instructions: " + GEMINI_SYSTEM_PROMPT}]})
+    contents.append({"role": "model", "parts": [{"text": "Understood. I am InvestIQ AI — your expert financial advisor for Indian markets. How can I help you today?"}]})
+
+    # Append conversation history (last 10 turns)
+    for h in (history or [])[-10:]:
+        role = "user" if h.get("role") == "user" else "model"
+        contents.append({"role": role, "parts": [{"text": h.get("text", "")}]})
+
+    # Current user message
+    contents.append({"role": "user", "parts": [{"text": message}]})
+
+    payload = json.dumps({"contents": contents}).encode("utf-8")
+    url     = f"{GEMINI_URL}?key={GEMINI_API_KEY}"
+    req     = urllib.request.Request(
+        url, data=payload,
+        headers={"Content-Type": "application/json", "User-Agent": "InvestIQ/1.0"},
+        method="POST"
+    )
+    with urllib.request.urlopen(req, timeout=15) as resp:
+        data = json.loads(resp.read().decode())
+
+    candidates = data.get("candidates", [])
+    if not candidates:
+        raise ValueError("Gemini returned no candidates")
+    return candidates[0]["content"]["parts"][0]["text"]
+
 
 @app.route("/api/chat", methods=["POST"])
 def api_chat():
     """
     POST /api/chat
-    Body: {"message": "What is a SIP?"}
-
-    Returns {"response": "...", "category": "investment"}
+    Body: {"message": "...", "history": [{role, text}, ...]}
+    Gemini-powered chatbot with rule-based fallback.
     """
     body    = request.get_json(force=True, silent=True) or {}
     message = body.get("message", "").strip()
+    history = body.get("history", [])
 
     if not message:
         return jsonify({"error": "No message provided"}), 400
 
+    try:
+        reply = _gemini_chat(message, history)
+        return jsonify({"reply": reply, "source": "gemini"})
+    except Exception:
+        pass  # Fall through to rule-based
+
     response, category = _rule_nlp(message)
-    return jsonify({"response": response, "category": category})
+    return jsonify({"reply": response, "category": category, "source": "rules"})
+
+
+@app.route("/api/gemini", methods=["POST"])
+def api_gemini():
+    """
+    POST /api/gemini
+    Body: {"message": "...", "history": [{role, text}, ...]}
+    Always returns ok:true with a reply. Gemini first, rule-based fallback.
+    """
+    body    = request.get_json(force=True, silent=True) or {}
+    message = body.get("message", "").strip()
+    history = body.get("history", [])
+
+    if not message:
+        return jsonify({"error": "No message provided"}), 400
+
+    gemini_error = None
+    try:
+        reply = _gemini_chat(message, history)
+        return jsonify({"reply": reply, "ok": True, "source": "gemini"})
+    except Exception as exc:
+        gemini_error = str(exc)
+
+    # Gemini failed — always return something useful via rule-based NLP
+    response, category = _rule_nlp(message)
+    return jsonify({
+        "reply":    response,
+        "ok":       True,
+        "source":   "rules",
+        "gemini_error": gemini_error  # visible in browser DevTools for debugging
+    })
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -809,6 +1002,309 @@ def api_search_stocks():
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
+#  FINNHUB API — Real-time prices, historical candles, analyst recommendations
+# ═══════════════════════════════════════════════════════════════════════════════
+
+FINNHUB_KEY  = os.environ.get("FINNHUB_KEY", "")
+FINNHUB_BASE = "https://finnhub.io/api/v1"
+
+# NSE India ticker -> Finnhub symbol mapping
+FINNHUB_MAP = {
+    "TCS.NS":        "NSE:TCS",
+    "INFY.NS":       "NSE:INFY",
+    "WIPRO.NS":      "NSE:WIPRO",
+    "HCLTECH.NS":    "NSE:HCLTECH",
+    "RELIANCE.NS":   "NSE:RELIANCE",
+    "HDFC.NS":       "NSE:HDFCBANK",
+    "ICICIBANK.NS":  "NSE:ICICIBANK",
+    "BAJFINANCE.NS": "NSE:BAJFINANCE",
+    "ITC.NS":        "NSE:ITC",
+    "MARUTI.NS":     "NSE:MARUTI",
+    "TECHM.NS":      "NSE:TECHM",
+    "SUNPHARMA.NS":  "NSE:SUNPHARMA",
+    "TATAMOTORS.NS": "NSE:TATAMOTORS",
+    "LT.NS":         "NSE:LT",
+    "AXISBANK.NS":   "NSE:AXISBANK",
+    "KOTAKBANK.NS":  "NSE:KOTAKBANK",
+    "SBIN.NS":       "NSE:SBIN",
+    "ASIANPAINT.NS": "NSE:ASIANPAINT",
+    "HINDUNILVR.NS": "NSE:HINDUNILVR",
+    "BHARTIARTL.NS": "NSE:BHARTIARTL",
+}
+
+_fh_cache = {}   # symbol -> {data, ts}
+_FH_TTL   = 30   # seconds for real-time quote cache
+
+
+def _finnhub_get(path, params=None):
+    """Low-level Finnhub HTTP GET. Returns parsed JSON dict or raises."""
+    import urllib.request, urllib.parse
+    p = {"token": FINNHUB_KEY}
+    if params:
+        p.update(params)
+    url = f"{FINNHUB_BASE}/{path}?{urllib.parse.urlencode(p)}"
+    req = urllib.request.Request(url, headers={"User-Agent": "InvestIQ/1.0"})
+    with urllib.request.urlopen(req, timeout=8) as resp:
+        return json.loads(resp.read().decode())
+
+
+def _fh_quote_cached(fh_symbol):
+    """Return Finnhub quote, using cache if fresh (<30 s)."""
+    import time
+    now = time.time()
+    if fh_symbol in _fh_cache and (now - _fh_cache[fh_symbol]["ts"]) < _FH_TTL:
+        return _fh_cache[fh_symbol]["data"]
+    data = _finnhub_get("quote", {"symbol": fh_symbol})
+    _fh_cache[fh_symbol] = {"data": data, "ts": now}
+    return data
+
+
+@app.route("/api/finnhub/quote")
+def api_fh_quote():
+    """
+    GET /api/finnhub/quote?symbol=TCS.NS
+    Real-time Finnhub quote for an NSE ticker.
+    """
+    yf_sym = request.args.get("symbol", "TCS.NS").upper()
+    fh_sym = FINNHUB_MAP.get(yf_sym, f"NSE:{yf_sym.replace('.NS','')}")
+    try:
+        q = _fh_quote_cached(fh_sym)
+        if not q or q.get("c", 0) == 0:
+            return jsonify({"error": "No data", "symbol": yf_sym}), 200
+        return jsonify({
+            "symbol":    yf_sym,
+            "fhSymbol":  fh_sym,
+            "price":     round(float(q.get("c", 0)), 2),
+            "change":    round(float(q.get("d", 0)), 2),
+            "changePct": round(float(q.get("dp", 0)), 2),
+            "high":      round(float(q.get("h", 0)), 2),
+            "low":       round(float(q.get("l", 0)), 2),
+            "open":      round(float(q.get("o", 0)), 2),
+            "prevClose": round(float(q.get("pc", 0)), 2),
+        })
+    except Exception as exc:
+        return jsonify({"error": str(exc), "symbol": yf_sym}), 200
+
+
+@app.route("/api/finnhub/candles")
+def api_fh_candles():
+    """
+    GET /api/finnhub/candles?symbol=TCS.NS&resolution=D&from=<unix>&to=<unix>
+    Historical OHLCV candles. Default: last 90 days, daily resolution.
+    """
+    import time as _time
+    yf_sym     = request.args.get("symbol", "TCS.NS").upper()
+    fh_sym     = FINNHUB_MAP.get(yf_sym, f"NSE:{yf_sym.replace('.NS','')}")
+    resolution = request.args.get("resolution", "D")
+    to_ts      = int(request.args.get("to",   _time.time()))
+    from_ts    = int(request.args.get("from", to_ts - 90 * 86400))
+    try:
+        raw = _finnhub_get("stock/candle", {
+            "symbol": fh_sym, "resolution": resolution,
+            "from": from_ts, "to": to_ts,
+        })
+        if raw.get("s") != "ok":
+            return jsonify({"error": "No candle data", "status": raw.get("s"), "symbol": yf_sym}), 200
+        timestamps = raw.get("t", [])
+        candles = [{"t": timestamps[i], "o": raw["o"][i], "h": raw["h"][i],
+                    "l": raw["l"][i], "c": raw["c"][i], "v": raw["v"][i]}
+                   for i in range(len(timestamps))]
+        return jsonify({"symbol": yf_sym, "fhSymbol": fh_sym,
+                        "resolution": resolution, "candles": candles, "count": len(candles)})
+    except Exception as exc:
+        return jsonify({"error": str(exc)}), 200
+
+
+@app.route("/api/finnhub/recommend")
+def api_fh_recommend():
+    """
+    GET /api/finnhub/recommend?symbol=TCS.NS
+    Latest analyst buy/sell/hold consensus from Finnhub.
+    """
+    yf_sym = request.args.get("symbol", "TCS.NS").upper()
+    fh_sym = FINNHUB_MAP.get(yf_sym, f"NSE:{yf_sym.replace('.NS','')}")
+    try:
+        data = _finnhub_get("stock/recommendation", {"symbol": fh_sym})
+        if not data:
+            data = _finnhub_get("stock/recommendation", {"symbol": yf_sym.replace(".NS", "")})
+        if not data:
+            return jsonify({"error": "No analyst data", "symbol": yf_sym}), 200
+        latest = data[0]
+        total  = (latest.get("buy", 0) + latest.get("hold", 0) + latest.get("sell", 0) +
+                  latest.get("strongBuy", 0) + latest.get("strongSell", 0)) or 1
+        buy_pct  = round((latest.get("buy", 0) + latest.get("strongBuy", 0)) / total * 100, 1)
+        sell_pct = round((latest.get("sell", 0) + latest.get("strongSell", 0)) / total * 100, 1)
+        hold_pct = round(latest.get("hold", 0) / total * 100, 1)
+        verdict  = "BUY" if buy_pct >= 60 else ("SELL" if sell_pct >= 50 else "HOLD")
+        return jsonify({
+            "symbol": yf_sym, "period": latest.get("period", ""),
+            "strongBuy": latest.get("strongBuy", 0), "buy": latest.get("buy", 0),
+            "hold": latest.get("hold", 0), "sell": latest.get("sell", 0),
+            "strongSell": latest.get("strongSell", 0),
+            "total": total, "buyPct": buy_pct, "holdPct": hold_pct, "sellPct": sell_pct,
+            "verdict": verdict,
+        })
+    except Exception as exc:
+        return jsonify({"error": str(exc), "symbol": yf_sym}), 200
+
+
+@app.route("/api/finnhub/profile")
+def api_fh_profile():
+    """
+    GET /api/finnhub/profile?symbol=TCS.NS
+    Company profile: name, sector, market cap, PE, logo, website.
+    """
+    yf_sym = request.args.get("symbol", "TCS.NS").upper()
+    fh_sym = FINNHUB_MAP.get(yf_sym, f"NSE:{yf_sym.replace('.NS','')}")
+    try:
+        data = _finnhub_get("stock/profile2", {"symbol": fh_sym})
+        if not data or not data.get("name"):
+            data = _finnhub_get("stock/profile2", {"symbol": yf_sym.replace(".NS", "")})
+        return jsonify({
+            "symbol": yf_sym, "name": data.get("name", ""),
+            "ticker": data.get("ticker", ""), "exchange": data.get("exchange", ""),
+            "industry": data.get("finnhubIndustry", ""),
+            "marketCap": data.get("marketCapitalization", 0),
+            "pe": data.get("pe", 0), "currency": data.get("currency", "INR"),
+            "logo": data.get("logo", ""), "weburl": data.get("weburl", ""),
+        })
+    except Exception as exc:
+        return jsonify({"error": str(exc), "symbol": yf_sym}), 200
+
+
+@app.route("/api/finnhub/all-quotes")
+def api_fh_all_quotes():
+    """
+    GET /api/finnhub/all-quotes
+    Bulk real-time quotes for all tracked stocks.
+    NOTE: Finnhub free tier does NOT support NSE India data.
+    This endpoint now uses yfinance (which reliably serves NSE data)
+    and returns results in the same format live.html expects.
+    Finnhub is still used for analyst recommendations only.
+    """
+    try:
+        import yfinance as yf
+        results = {}
+        name_map = {v: k for k, v in LIVE_TICKERS.items()}  # reverse: ticker -> name
+        tickers_list = list(LIVE_TICKERS.values())
+
+        # Download all tickers in a single batch request (fast)
+        data = yf.download(
+            tickers_list,
+            period="2d",
+            interval="1d",
+            group_by="ticker",
+            auto_adjust=True,
+            progress=False,
+            threads=True,
+        )
+
+        for ticker in tickers_list:
+            try:
+                if len(tickers_list) == 1:
+                    closes = data["Close"]
+                else:
+                    closes = data[ticker]["Close"]
+                closes = closes.dropna()
+                if len(closes) < 1:
+                    continue
+                price = float(closes.iloc[-1])
+                prev  = float(closes.iloc[-2]) if len(closes) >= 2 else price
+                pct   = ((price - prev) / prev * 100) if prev else 0
+                results[ticker] = {
+                    "name":      name_map.get(ticker, ticker),
+                    "symbol":    ticker,
+                    "price":     round(price, 2),
+                    "prevClose": round(prev, 2),
+                    "changePct": round(pct, 2),
+                    "change":    round(price - prev, 2),
+                    "source":    "yfinance",
+                }
+            except Exception:
+                continue
+
+        if not results:
+            return jsonify({"error": "No data available", "fallback": True})
+        return jsonify(results)
+
+    except ImportError:
+        return jsonify({"error": "yfinance not installed", "fallback": True})
+    except Exception as exc:
+        return jsonify({"error": str(exc), "fallback": True})
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+#  NEWS ENDPOINT
+# ═══════════════════════════════════════════════════════════════════════════════
+
+NEWS_API_KEY = os.environ.get("NEWS_API_KEY", "")
+_news_cache = {"data": None, "ts": 0}
+NEWS_CACHE_TTL = 300  # 5 minutes
+
+
+@app.route("/api/news")
+def api_news():
+    """
+    GET /api/news?q=<query>&category=<business|general>&pageSize=<n>
+    Returns top financial/business news from NewsAPI.
+    Cached for 5 minutes to avoid rate-limit.
+    """
+    import time, urllib.request
+
+    query    = request.args.get("q", "India stock market OR NSE OR Sensex OR Nifty")
+    category = request.args.get("category", "business")
+    page_size = min(int(request.args.get("pageSize", 15)), 30)
+
+    now = time.time()
+    # Return cached copy if fresh
+    if _news_cache["data"] and (now - _news_cache["ts"]) < NEWS_CACHE_TTL:
+        cached = _news_cache["data"]
+        # Filter by query if different from cache key — just return cached
+        return jsonify(cached)
+
+    try:
+        # Build NewsAPI URL
+        import urllib.parse
+        params = urllib.parse.urlencode({
+            "q":        query,
+            "language": "en",
+            "sortBy":   "publishedAt",
+            "pageSize": page_size,
+            "apiKey":   NEWS_API_KEY,
+        })
+        url = f"https://newsapi.org/v2/everything?{params}"
+
+        req = urllib.request.Request(url, headers={"User-Agent": "InvestIQ/1.0"})
+        with urllib.request.urlopen(req, timeout=8) as resp:
+            raw = json.loads(resp.read().decode())
+
+        articles = raw.get("articles", [])
+        result = []
+        for a in articles:
+            if not a.get("title") or a["title"] == "[Removed]":
+                continue
+            result.append({
+                "title":       a.get("title", ""),
+                "description": a.get("description") or "",
+                "url":         a.get("url", "#"),
+                "source":      a.get("source", {}).get("name", "Unknown"),
+                "publishedAt": a.get("publishedAt", ""),
+                "urlToImage":  a.get("urlToImage") or "",
+            })
+
+        payload = {"articles": result, "totalResults": len(result), "ok": True}
+        _news_cache["data"] = payload
+        _news_cache["ts"]   = now
+        return jsonify(payload)
+
+    except Exception as exc:
+        # Return cached data if available, else error
+        if _news_cache["data"]:
+            return jsonify({**_news_cache["data"], "cached": True})
+        return jsonify({"ok": False, "error": str(exc), "articles": []}), 200
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
 #  MAIN
 # ═══════════════════════════════════════════════════════════════════════════════
 
@@ -823,6 +1319,7 @@ if __name__ == "__main__":
     print("    GET  /api/live-quotes")
     print("    GET  /api/market-indices")
     print("    GET  /api/search-stocks?q=tcs")
+    print("    GET  /api/news?q=<query>&pageSize=15  ← NewsAPI integrated")
     print("    POST /api/chat  (body: {\"message\": \"...\"})")
     print("="*55 + "\n")
     app.run(debug=True, port=5000, host="0.0.0.0")

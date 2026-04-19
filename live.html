@@ -1695,6 +1695,45 @@
       }
     }
 
+    /* ══ NEWS PANEL STYLES ══ */
+    .news-header-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:1.2rem; }
+    .news-refresh-btn { background:rgba(245,200,66,0.1); border:1px solid rgba(245,200,66,0.25); color:var(--gold); border-radius:100px; padding:0.35rem 0.85rem; font-size:0.73rem; font-weight:700; cursor:pointer; font-family:'DM Sans',sans-serif; display:flex; align-items:center; gap:0.35rem; transition:background 0.2s,transform 0.2s; }
+    .news-refresh-btn:hover { background:rgba(245,200,66,0.18); transform:translateY(-1px); }
+    .news-refresh-btn.spinning { animation:spin 1s linear infinite; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+    .news-filter-row { display:flex; gap:0.4rem; flex-wrap:wrap; margin-bottom:1.1rem; }
+    .news-filter-btn { background:var(--bg3); border:1px solid var(--border); color:var(--muted); border-radius:100px; padding:0.3rem 0.8rem; font-size:0.72rem; font-weight:600; cursor:pointer; font-family:'DM Sans',sans-serif; transition:all 0.2s; }
+    .news-filter-btn.active { background:rgba(245,200,66,0.12); border-color:rgba(245,200,66,0.35); color:var(--gold); }
+    .news-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(340px,1fr)); gap:1.1rem; }
+    .news-card { background:var(--bg2); border:1px solid var(--border); border-radius:16px; overflow:hidden; transition:transform 0.25s,border-color 0.25s; cursor:pointer; text-decoration:none; display:flex; flex-direction:column; }
+    .news-card:hover { transform:translateY(-5px); border-color:rgba(245,200,66,0.3); }
+    .news-card-img { width:100%; height:160px; object-fit:cover; background:var(--bg3); display:block; }
+    .news-card-img-placeholder { width:100%; height:160px; background:linear-gradient(135deg,rgba(245,200,66,0.06),rgba(0,217,126,0.04)); display:flex; align-items:center; justify-content:center; font-size:2.5rem; color:var(--border); }
+    .news-card-body { padding:1rem 1.1rem 1.1rem; flex:1; display:flex; flex-direction:column; }
+    .news-card-meta { display:flex; align-items:center; gap:0.5rem; margin-bottom:0.5rem; }
+    .news-card-source { font-size:0.68rem; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; color:var(--gold); }
+    .news-card-dot { width:3px; height:3px; border-radius:50%; background:var(--muted); }
+    .news-card-time { font-size:0.68rem; color:var(--muted); }
+    .news-card-title { font-family:'Syne',sans-serif; font-weight:700; font-size:0.92rem; line-height:1.4; color:var(--text); margin-bottom:0.5rem; }
+    .news-card-desc { font-size:0.8rem; color:var(--muted); line-height:1.55; flex:1; }
+    .news-card-footer { display:flex; align-items:center; justify-content:space-between; margin-top:0.75rem; }
+    .news-card-tag { display:inline-block; padding:0.22rem 0.65rem; border-radius:100px; font-size:0.65rem; font-weight:700; background:rgba(56,191,255,0.1); color:var(--sky); border:1px solid rgba(56,191,255,0.2); }
+    .news-card-link { font-size:0.72rem; color:var(--gold); font-weight:600; opacity:0.8; transition:opacity 0.2s; }
+    .news-card:hover .news-card-link { opacity:1; }
+    .news-loading { text-align:center; padding:4rem 0; color:var(--muted); font-size:0.9rem; }
+    .news-loading .spin-icon { display:inline-block; font-size:1.5rem; animation:spin 1s linear infinite; }
+    .news-error { text-align:center; padding:3rem 1rem; }
+    .news-error-ico { font-size:2rem; margin-bottom:0.8rem; }
+    .news-error-txt { color:var(--muted); font-size:0.88rem; line-height:1.6; }
+    /* Sidebar news items */
+    .sb-news-item { background:var(--bg3); border:1px solid var(--border); border-radius:10px; padding:0.75rem 0.8rem; margin-bottom:0.55rem; cursor:pointer; transition:border-color 0.2s,transform 0.2s; text-decoration:none; display:block; }
+    .sb-news-item:hover { border-color:rgba(245,200,66,0.28); transform:translateX(2px); }
+    .sb-news-src { font-size:0.62rem; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--gold); margin-bottom:0.2rem; }
+    .sb-news-title { font-size:0.76rem; line-height:1.45; color:var(--text); font-weight:500; }
+    .sb-news-time { font-size:0.62rem; color:var(--muted); margin-top:0.25rem; }
+    .sb-news-loading { text-align:center; padding:1.5rem 0; color:var(--muted); font-size:0.8rem; }
+    @media(max-width:768px){ .news-grid{ grid-template-columns:1fr } }
+
     /* ══ ANALYTICS PANEL STYLES ══ */
     .analytics-grid-2-1 { display:grid; grid-template-columns:2fr 1fr; gap:1.2rem; margin-bottom:1.2rem; }
     .analytics-grid-1-1 { display:grid; grid-template-columns:1fr 1fr; gap:1.2rem; margin-bottom:1.2rem; }
@@ -1995,10 +2034,13 @@
           📊 Live
         </button>
         <button class="snav-btn" id="tab-momentum" onclick="switchTab('momentum')">
-          🚀 My Momentum
+          🚀 Momentum
         </button>
         <button class="snav-btn" id="tab-analytics" onclick="switchTab('analytics')">
           📊 Analytics
+        </button>
+        <button class="snav-btn" id="tab-news" onclick="switchTab('news')">
+          📰 News
         </button>
       </div>
     </div>
@@ -2087,6 +2129,20 @@
           <div class="qrow"><div><div class="qrow-lbl">🏢 Sector Allocation</div><div style="font-size:0.7rem;color:var(--muted)">Donut + bar chart</div></div></div>
         </div>
       </div><!-- /sb-analytics -->
+
+      <!-- ── News sidebar panel ── -->
+      <div class="sb-panel" id="sb-news">
+        <div class="sb-lbl">Market News Feed</div>
+        <div class="sb-ai">
+          <div class="sb-ai-ico">📰</div>
+          <div>
+            <div class="sb-ai-lbl">Live News</div>
+            <div class="sb-ai-txt">Latest market-moving headlines from India & global finance.</div>
+          </div>
+        </div>
+        <div class="sb-lbl" style="margin-top:0.8rem">Latest Headlines</div>
+        <div id="sbNewsFeed"><div class="sb-news-loading">⏳ Loading headlines…</div></div>
+      </div><!-- /sb-news -->
 
     </div><!-- /sidebar-body -->
 
@@ -2393,6 +2449,44 @@
         </div>
 
       </div><!-- /main-analytics -->
+
+      <!-- ═══ NEWS MAIN PANEL ═══ -->
+      <div class="main-panel" id="main-news">
+
+        <!-- KPI header -->
+        <div class="news-header-row">
+          <div>
+            <div class="sec-tag">Live Feed · Updated every 5 min</div>
+            <div class="sec-ttl" style="font-size:1.4rem">📰 Financial News Hub</div>
+          </div>
+          <button class="news-refresh-btn" id="newsRefreshBtn" onclick="refreshNews()">⟳ Refresh</button>
+        </div>
+
+        <!-- Topic filters -->
+        <div class="news-filter-row" id="newsFilterRow">
+          <button class="news-filter-btn active" data-q="India stock market OR NSE OR Sensex OR Nifty">🇮🇳 Indian Markets</button>
+          <button class="news-filter-btn" data-q="TCS OR Infosys OR Wipro OR HCL Technologies">💻 IT Sector</button>
+          <button class="news-filter-btn" data-q="RBI monetary policy India economy">🏦 RBI / Economy</button>
+          <button class="news-filter-btn" data-q="mutual fund SIP investment India">📈 Mutual Funds</button>
+          <button class="news-filter-btn" data-q="cryptocurrency bitcoin India regulation">₿ Crypto</button>
+          <button class="news-filter-btn" data-q="global stock market S&amp;P Fed interest rate">🌍 Global</button>
+        </div>
+
+        <!-- AI banner -->
+        <div class="ai-banner" style="margin-bottom:1.2rem">
+          <div class="ai-bico">📰</div>
+          <div>
+            <div class="ai-blbl">⚡ News Intelligence</div>
+            <div class="ai-btxt" id="newsSentimentTxt">Fetching latest market intelligence from trusted sources…</div>
+          </div>
+        </div>
+
+        <!-- News grid -->
+        <div class="news-grid" id="newsGrid">
+          <div class="news-loading"><div class="spin-icon">⏳</div><br>Fetching latest news…</div>
+        </div>
+
+      </div><!-- /main-news -->
 
     </div>
   </main>
@@ -3297,6 +3391,157 @@
     setInterval(loop, 4000);
 
     // ══════════════════════════════════════════════════
+    //  NEWS MODULE
+    // ══════════════════════════════════════════════════
+    (function () {
+      const API = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost'
+        ? `${window.location.protocol}//${window.location.host}` : '';
+
+      let currentQuery = 'India stock market OR NSE OR Sensex OR Nifty';
+      let newsLoaded = false;
+
+      // ── Time formatter ──
+      function timeAgo(iso) {
+        if (!iso) return '';
+        const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+        if (diff < 60) return `${diff}s ago`;
+        if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+        if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+        return `${Math.floor(diff / 86400)}d ago`;
+      }
+
+      // ── Sentiment summary from headlines ──
+      function buildSentiment(articles) {
+        const bullWords = ['gain','rise','surge','rally','growth','profit','record','bullish','up','beat','positive','hike','strong'];
+        const bearWords = ['fall','drop','plunge','crash','loss','decline','bearish','down','miss','negative','cut','weak','concern'];
+        let bull = 0, bear = 0;
+        articles.slice(0, 10).forEach(a => {
+          const t = (a.title + ' ' + a.description).toLowerCase();
+          bullWords.forEach(w => { if (t.includes(w)) bull++; });
+          bearWords.forEach(w => { if (t.includes(w)) bear++; });
+        });
+        const total = bull + bear || 1;
+        const bullPct = Math.round(bull / total * 100);
+        if (bullPct >= 60) return `📈 Sentiment from top headlines is <strong>bullish (${bullPct}% positive)</strong>. Market momentum looks favorable for equities.`;
+        if (bullPct <= 40) return `📉 Sentiment from top headlines is <strong>bearish (${100-bullPct}% negative)</strong>. Exercise caution — defensive positioning may help.`;
+        return `⚖️ Headlines show <strong>mixed sentiment</strong>. Market consolidating — watch volume and earnings data for clearer direction.`;
+      }
+
+      // ── Render main news grid ──
+      function renderNewsGrid(articles) {
+        const grid = document.getElementById('newsGrid');
+        if (!articles || articles.length === 0) {
+          grid.innerHTML = `<div class="news-error"><div class="news-error-ico">📭</div><div class="news-error-txt">No articles found for this topic.<br>Try a different filter or refresh.</div></div>`;
+          return;
+        }
+        grid.innerHTML = articles.map(a => {
+          const imgHtml = a.urlToImage
+            ? `<img class="news-card-img" src="${a.urlToImage}" alt="" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+               <div class="news-card-img-placeholder" style="display:none">📰</div>`
+            : `<div class="news-card-img-placeholder">📰</div>`;
+          return `
+          <a class="news-card" href="${a.url}" target="_blank" rel="noopener">
+            ${imgHtml}
+            <div class="news-card-body">
+              <div class="news-card-meta">
+                <span class="news-card-source">${a.source}</span>
+                <span class="news-card-dot"></span>
+                <span class="news-card-time">${timeAgo(a.publishedAt)}</span>
+              </div>
+              <div class="news-card-title">${a.title}</div>
+              <div class="news-card-desc">${a.description ? a.description.slice(0, 120) + (a.description.length > 120 ? '…' : '') : ''}</div>
+              <div class="news-card-footer">
+                <span class="news-card-tag">Finance</span>
+                <span class="news-card-link">Read more →</span>
+              </div>
+            </div>
+          </a>`;
+        }).join('');
+      }
+
+      // ── Render sidebar news items ──
+      function renderSbNews(articles) {
+        const el = document.getElementById('sbNewsFeed');
+        if (!el) return;
+        if (!articles || articles.length === 0) {
+          el.innerHTML = `<div class="sb-news-loading">No headlines available</div>`;
+          return;
+        }
+        el.innerHTML = articles.slice(0, 6).map(a => `
+          <a class="sb-news-item" href="${a.url}" target="_blank" rel="noopener">
+            <div class="sb-news-src">${a.source}</div>
+            <div class="sb-news-title">${a.title}</div>
+            <div class="sb-news-time">${timeAgo(a.publishedAt)}</div>
+          </a>`);
+      }
+
+      // ── Fetch from API ──
+      async function fetchNews(q, showSpin) {
+        if (showSpin) {
+          const btn = document.getElementById('newsRefreshBtn');
+          if (btn) { btn.textContent = '⟳ Loading…'; btn.disabled = true; }
+          document.getElementById('newsGrid').innerHTML = `<div class="news-loading"><div class="spin-icon">⏳</div><br>Fetching latest news…</div>`;
+        }
+        try {
+          const url = `${API}/api/news?q=${encodeURIComponent(q)}&pageSize=15`;
+          const res = await fetch(url);
+          const data = await res.json();
+          if (data.ok && data.articles && data.articles.length > 0) {
+            renderNewsGrid(data.articles);
+            renderSbNews(data.articles);
+            const sentimentEl = document.getElementById('newsSentimentTxt');
+            if (sentimentEl) sentimentEl.innerHTML = buildSentiment(data.articles);
+          } else {
+            document.getElementById('newsGrid').innerHTML = `<div class="news-error"><div class="news-error-ico">⚠️</div><div class="news-error-txt">Could not load news. Please ensure the Flask server is running.<br><small>${data.error || ''}</small></div></div>`;
+            document.getElementById('sbNewsFeed').innerHTML = `<div class="sb-news-loading">Server offline — news unavailable</div>`;
+          }
+        } catch (e) {
+          document.getElementById('newsGrid').innerHTML = `<div class="news-error"><div class="news-error-ico">🔌</div><div class="news-error-txt">Could not connect to news server.<br><small>Make sure Flask is running on port 5000.</small></div></div>`;
+        } finally {
+          const btn = document.getElementById('newsRefreshBtn');
+          if (btn) { btn.textContent = '⟳ Refresh'; btn.disabled = false; }
+        }
+      }
+
+      // ── Filter buttons ──
+      document.getElementById('newsFilterRow').addEventListener('click', function (e) {
+        const btn = e.target.closest('.news-filter-btn');
+        if (!btn) return;
+        document.querySelectorAll('.news-filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentQuery = btn.dataset.q;
+        fetchNews(currentQuery, true);
+      });
+
+      // ── Refresh button ──
+      window.refreshNews = function () { fetchNews(currentQuery, true); };
+
+      // ── Load news lazily when News tab is opened ──
+      const _origSwitchTab = window.switchTab || function() {};
+      window.switchTab = function(id) {
+        _origSwitchTab(id);
+        // Patch titles for news tab
+        if (id === 'news') {
+          document.querySelectorAll('.sb-panel').forEach(p => p.classList.remove('active'));
+          document.querySelectorAll('.snav-btn').forEach(b => b.classList.remove('active'));
+          const sbP = document.getElementById('sb-news'); if (sbP) sbP.classList.add('active');
+          const tabB = document.getElementById('tab-news'); if (tabB) tabB.classList.add('active');
+          document.querySelectorAll('.main-panel').forEach(p => p.classList.remove('active'));
+          const mp = document.getElementById('main-news'); if (mp) mp.classList.add('active');
+          document.getElementById('mainTitle').textContent = 'Financial News Hub';
+          document.getElementById('mainSubtitle').textContent = 'Real-time market news · AI sentiment · Multiple categories';
+          if (!newsLoaded) { newsLoaded = true; fetchNews(currentQuery, false); }
+        }
+      };
+
+      // ── Auto-refresh news every 5 minutes ──
+      setInterval(() => { if (newsLoaded) fetchNews(currentQuery, false); }, 5 * 60 * 1000);
+
+      // ── Pre-fetch sidebar news on load ──
+      setTimeout(() => fetchNews(currentQuery, false), 1500);
+    })();
+
+    // ══════════════════════════════════════════════════
     //  API-BACKED SEARCH (with debounce)
     // ══════════════════════════════════════════════════
     (function () {
@@ -3368,13 +3613,34 @@
         results.classList.add('open');
       }
 
-      // ── Fetch live quotes from API on page load ──
+      // ── Fetch live quotes — Finnhub primary, yfinance fallback ──
       async function fetchLiveData() {
+        // Try Finnhub first
         try {
-          const res = await fetch(`${API}/api/live-quotes`);
+          const res  = await fetch(`${API}/api/finnhub/all-quotes`);
           const data = await res.json();
-          if (data.error || data.fallback) return; // use simulated
-          // Update stock prices from API
+          if (!data.error && !data.fallback && Object.keys(data).length > 0) {
+            Object.entries(data).forEach(([ticker, info]) => {
+              if (S[ticker]) {
+                S[ticker].price = info.price;
+                S[ticker].hist.push(info.price);
+                if (S[ticker].hist.length > N + 10) S[ticker].hist.shift();
+              }
+            });
+            // Update LIVE badge to show Finnhub is connected
+            const badge = document.querySelector('.live-badge');
+            if (badge && !badge.dataset.fhSet) {
+              badge.dataset.fhSet = '1';
+              badge.title = 'Powered by Finnhub Real-Time Data';
+            }
+            return;
+          }
+        } catch (e) { }
+        // Fallback to yfinance
+        try {
+          const res  = await fetch(`${API}/api/live-quotes`);
+          const data = await res.json();
+          if (data.error || data.fallback) return;
           Object.entries(data).forEach(([ticker, info]) => {
             if (S[ticker]) {
               S[ticker].price = info.price;
@@ -3407,13 +3673,13 @@
         } catch (e) { }
       }
 
-      // Fire API fetch on load (non-blocking)  
+      // Fire immediately on load, then re-fetch every 15s (Finnhub is fast)
       fetchLiveData();
       fetchIndices();
-      // Re-fetch every 30s
-      setInterval(fetchLiveData, 30000);
+      setInterval(fetchLiveData, 15000);
       setInterval(fetchIndices, 30000);
     })();
+
 
     // ══════════════════════════════════════════════════
     //  EMBEDDED CHATBOT
