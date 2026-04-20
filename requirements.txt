@@ -21,6 +21,7 @@ kaggle>=1.6.0
 # --- Web API ---
 flask>=3.0.0
 flask-cors>=4.0.0
+gunicorn>=21.0.0
 
 # --- Auth & Security ---
 PyJWT>=2.8.0
