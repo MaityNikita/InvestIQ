@@ -357,7 +357,76 @@ def api_collect_email():
     return jsonify({"success": True, "message": "Thank you! Your email has been saved."})
 
 
+@app.route("/admin/emails")
+def admin_emails():
+    """
+    GET /admin/emails?key=YOUR_SECRET_KEY
+    Returns a simple HTML dashboard of all recorded visitor emails.
+    """
+    key = request.args.get("key")
+    if key != "investiq_admin_super_secret":
+        return "<h1>Unauthorized</h1><p>Incorrect or missing 'key' parameter.</p>", 401
+    
+    emails = _load_json(EMAILS_FILE)
+    html = '''
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>InvestIQ Admin | Visitor Emails</title>
+        <style>
+            body { font-family: 'Inter', -apple-system, sans-serif; background: #0b0f19; color: #f8fafc; padding: 2rem; margin: 0; }
+            .container { max-width: 1000px; margin: 0 auto; }
+            h1 { color: #facc15; font-weight: 600; margin-bottom: 0.5rem; }
+            .meta { color: #94a3b8; margin-bottom: 2rem; font-size: 0.95rem; }
+            table { width: 100%; border-collapse: collapse; border-radius: 8px; overflow: hidden; }
+            th, td { border-bottom: 1px solid #1e293b; padding: 14px 16px; text-align: left; }
+            th { background: #1e293b; color: #cbd5e1; font-weight: 500; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.05em; }
+            tr:hover { background: #0f172a; }
+            td { font-size: 0.95rem; }
+            .empty { text-align: center; color: #64748b; padding: 3rem; }
+            .note { margin-top: 2rem; padding: 1rem; background: rgba(59, 130, 246, 0.1); border-left: 4px solid #3b82f6; color: #bfdbfe; font-size: 0.85rem; }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>Visitor Emails Dashboard</h1>
+            <div class="meta">Total Entries: <strong>''' + str(len(emails)) + '''</strong></div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date Caught</th>
+                        <th>Email Address</th>
+                        <th>Source</th>
+                        <th>Name/Alias</th>
+                    </tr>
+                </thead>
+                <tbody>
+    '''
+    # Show newest first
+    if not emails:
+        html += '<tr><td colspan="4" class="empty">No emails collected yet.</td></tr>'
+    else:
+        for e in reversed(emails):
+            date_caught = e.get('date', 'Unknown')
+            email_addr  = e.get('email', 'Unknown')
+            src         = e.get('source', 'guest')
+            name_val    = e.get('name') or '<i>None provided</i>'
+            html += f"<tr><td>{date_caught}</td><td><strong>{email_addr}</strong></td><td><span style='background: #1e293b; padding: 3px 8px; border-radius: 12px; font-size: 0.8rem;'>{src}</span></td><td>{name_val}</td></tr>"
+    html += '''
+                </tbody>
+            </table>
+            <div class="note">
+                <strong>Note:</strong> Since Render uses an ephemeral file system on its free tier, the records here will clear out every time your Render service goes to sleep or is redeployed. It's recommended to manually copy them or eventually hook up a database if you need permanent storage.
+            </div>
+        </div>
+    </body>
+    </html>
+    '''
+    return html
+
+
 # ── 1. STOCK PREDICTION ───────────────────────────────────────────────────────
+
 
 @app.route("/api/predict")
 def api_predict():
