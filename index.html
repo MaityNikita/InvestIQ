@@ -3146,7 +3146,7 @@
     // ═══════════════════════════════════════════════════════
     const API = (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost')
       ? `${window.location.protocol}//${window.location.host}`
-      : 'http://localhost:5000';
+      : '';
 
     function _getToken() { return localStorage.getItem('iq_token'); }
     function _getUser() { try { return JSON.parse(localStorage.getItem('iq_user') || 'null'); } catch { return null; } }
