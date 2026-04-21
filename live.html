@@ -3347,44 +3347,7 @@
     // ══════════════════════════════════════════════════
     //  ANALYTICS CHARTS (lazy-init)
     // ══════════════════════════════════════════════════
-    function initAnalyticsCharts(){
-      Chart.defaults.color='#7A8BA0'; Chart.defaults.borderColor='rgba(255,255,255,0.06)'; Chart.defaults.font.family="'DM Sans',sans-serif";
-      const ttStyle={backgroundColor:'#111927',borderColor:'rgba(245,200,66,0.3)',borderWidth:1,padding:12,cornerRadius:12};
-      const legStyle={position:'bottom',labels:{usePointStyle:true,pointStyle:'circle',padding:18,font:{size:11}}};
-      // 1) Market Trends Line
-      new Chart(document.getElementById('anLineChart'),{type:'line',data:{labels:['Jan','Feb','Mar','Apr','May','Jun'],datasets:[
-        {label:'TCS',data:[3200,3300,3250,3400,3500,3642],borderColor:'#F5C842',backgroundColor:'rgba(245,200,66,0.08)',fill:true,tension:0.4,borderWidth:2.5,pointRadius:3,pointBackgroundColor:'#F5C842'},
-        {label:'Infosys',data:[1400,1450,1500,1480,1550,1612],borderColor:'#00D97E',backgroundColor:'rgba(0,217,126,0.06)',fill:true,tension:0.4,borderWidth:2.5,pointRadius:3,pointBackgroundColor:'#00D97E'},
-        {label:'Wipro',data:[500,490,475,468,460,457],borderColor:'#FF6B6B',backgroundColor:'rgba(255,107,107,0.05)',fill:true,tension:0.4,borderWidth:2,pointRadius:2,pointBackgroundColor:'#FF6B6B'},
-        {label:'HCL Tech',data:[1150,1180,1200,1190,1210,1228],borderColor:'#38BFFF',backgroundColor:'rgba(56,191,255,0.05)',fill:true,tension:0.4,borderWidth:2,pointRadius:2,pointBackgroundColor:'#38BFFF'},
-        {label:'Tech Mahindra',data:[1400,1380,1370,1360,1350,1346],borderColor:'#A78BFA',backgroundColor:'rgba(167,139,250,0.05)',fill:true,tension:0.4,borderWidth:2,pointRadius:2,pointBackgroundColor:'#A78BFA'}
-      ]},options:{responsive:true,interaction:{intersect:false,mode:'index'},plugins:{legend:legStyle,tooltip:{...ttStyle,titleColor:'#EEF2FF',bodyColor:'#7A8BA0',displayColors:true}},scales:{y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{callback:v=>'₹'+v}},x:{grid:{display:false}}}}});
-      // 2) Bar Chart — Stock Comparison
-      new Chart(document.getElementById('anBarChart'),{type:'bar',data:{labels:['TCS','Infosys','Wipro','HCL Tech','Tech Mahindra'],datasets:[{label:'Stock Price (₹)',data:[3642,1612,457,1228,1346],backgroundColor:['rgba(245,200,66,0.7)','rgba(0,217,126,0.7)','rgba(255,107,107,0.7)','rgba(56,191,255,0.7)','rgba(167,139,250,0.7)'],borderColor:['#F5C842','#00D97E','#FF6B6B','#38BFFF','#A78BFA'],borderWidth:2,borderRadius:8,borderSkipped:false}]},options:{responsive:true,plugins:{legend:{display:false},tooltip:{...ttStyle,callbacks:{label:ctx=>'₹'+ctx.parsed.y.toLocaleString()}}},scales:{y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{callback:v=>'₹'+v}},x:{grid:{display:false}}}}});
-      // 3) Performance Line
-      new Chart(document.getElementById('anPerfLine'),{type:'line',data:{labels:['Q1','Q2','Q3','Q4'],datasets:[
-        {label:'TCS',data:[8.2,10.4,12.1,15.3],borderColor:'#F5C842',tension:0.4,borderWidth:2.5,pointRadius:4,pointBackgroundColor:'#F5C842'},
-        {label:'Infosys',data:[6.1,8.3,7.9,11.2],borderColor:'#00D97E',tension:0.4,borderWidth:2.5,pointRadius:4,pointBackgroundColor:'#00D97E'},
-        {label:'Wipro',data:[2.3,1.8,-0.5,-2.1],borderColor:'#FF6B6B',tension:0.4,borderWidth:2,pointRadius:3,pointBackgroundColor:'#FF6B6B'},
-        {label:'HCL Tech',data:[4.5,5.2,6.8,7.1],borderColor:'#38BFFF',tension:0.4,borderWidth:2,pointRadius:3,pointBackgroundColor:'#38BFFF'},
-        {label:'Tech Mahindra',data:[3.1,1.5,-1.2,-3.8],borderColor:'#A78BFA',tension:0.4,borderWidth:2,pointRadius:3,pointBackgroundColor:'#A78BFA'}
-      ]},options:{responsive:true,plugins:{legend:legStyle,tooltip:{...ttStyle,callbacks:{label:ctx=>ctx.dataset.label+': '+ctx.parsed.y+'% return'}}},scales:{y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{callback:v=>v+'%'}},x:{grid:{display:false}}}}});
-      // 4) Risk Radar
-      new Chart(document.getElementById('anRiskRadar'),{type:'radar',data:{labels:['Volatility','Beta','Max Drawdown','Sharpe Ratio','VaR'],datasets:[
-        {label:'TCS',data:[40,55,30,80,45],borderColor:'#F5C842',backgroundColor:'rgba(245,200,66,0.1)',pointBackgroundColor:'#F5C842',borderWidth:2},
-        {label:'Infosys',data:[25,40,20,85,30],borderColor:'#00D97E',backgroundColor:'rgba(0,217,126,0.1)',pointBackgroundColor:'#00D97E',borderWidth:2},
-        {label:'Wipro',data:[75,80,70,30,80],borderColor:'#FF6B6B',backgroundColor:'rgba(255,107,107,0.1)',pointBackgroundColor:'#FF6B6B',borderWidth:2}
-      ]},options:{responsive:true,plugins:{legend:legStyle},scales:{r:{angleLines:{color:'rgba(255,255,255,0.06)'},grid:{color:'rgba(255,255,255,0.06)'},pointLabels:{color:'#7A8BA0',font:{size:11}},ticks:{display:false},suggestedMin:0,suggestedMax:100}}}});
-      // 5) Volatility Bar
-      new Chart(document.getElementById('anVolBar'),{type:'bar',data:{labels:['TCS','Infosys','Wipro','HCL Tech','Tech M.'],datasets:[{label:'Volatility %',data:[18.2,12.5,32.8,15.4,28.6],backgroundColor:['rgba(245,200,66,0.6)','rgba(0,217,126,0.6)','rgba(255,107,107,0.6)','rgba(56,191,255,0.6)','rgba(167,139,250,0.6)'],borderColor:['#F5C842','#00D97E','#FF6B6B','#38BFFF','#A78BFA'],borderWidth:2,borderRadius:8,borderSkipped:false}]},options:{indexAxis:'y',responsive:true,plugins:{legend:{display:false},tooltip:{...ttStyle,callbacks:{label:ctx=>ctx.parsed.x+'% volatility'}}},scales:{x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{callback:v=>v+'%'}},y:{grid:{display:false}}}}});
-      // 6) Sector Donut
-      new Chart(document.getElementById('anSectorDonut'),{type:'doughnut',data:{labels:['IT Services','Cloud & SaaS','Consulting','Product Eng.'],datasets:[{data:[45,25,18,12],backgroundColor:['#F5C842','#00D97E','#38BFFF','#A78BFA'],borderColor:'#111927',borderWidth:3,hoverOffset:8}]},options:{responsive:true,cutout:'65%',plugins:{legend:{display:false},tooltip:{...ttStyle,callbacks:{label:ctx=>ctx.label+': '+ctx.parsed+'%'}}}}});
-      // 7) Sector Performance Bar
-      new Chart(document.getElementById('anSectorBar'),{type:'bar',data:{labels:['IT Services','Cloud & SaaS','Consulting','Product Eng.'],datasets:[
-        {label:'Q3 2025',data:[12.4,18.2,8.1,14.7],backgroundColor:'rgba(245,200,66,0.4)',borderColor:'#F5C842',borderWidth:1,borderRadius:6},
-        {label:'Q4 2025',data:[15.1,22.5,9.8,16.3],backgroundColor:'rgba(0,217,126,0.4)',borderColor:'#00D97E',borderWidth:1,borderRadius:6}
-      ]},options:{responsive:true,plugins:{legend:legStyle,tooltip:{...ttStyle,callbacks:{label:ctx=>ctx.dataset.label+': '+ctx.parsed.y+'% growth'}}},scales:{y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{callback:v=>v+'%'}},x:{grid:{display:false}}}}});
-    }
+
 
     init();
     setupSearch();
@@ -3677,7 +3640,7 @@
       }
 
       // Fire immediately on load, then re-fetch every 15s (Finnhub is fast)
-      init();
+      // Removed the second init() call since it runs globally already via loop() sequence!
       fetchLiveData();
       fetchIndices();
       setInterval(fetchLiveData, 15000);
@@ -3692,8 +3655,8 @@
     Chart.defaults.borderColor = 'rgba(255,255,255,0.06)';
     Chart.defaults.font.family = "'DM Sans', sans-serif";
 
-    let anCharts = {};
-    let analyticsInit = false;
+    var anCharts = {};
+    var analyticsInit = false;
 
     function initAnalyticsCharts() {
       if (analyticsInit) return;

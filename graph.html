@@ -1109,12 +1109,12 @@
     
     function updateGraphCharts() {
       const lineChart = Chart.getChart('lineChart');
-      if (lineChart && S['TCS.NS']) {
+      if (lineChart && S['TCS.NS'] && lineChart.data.datasets[3]) {
         lineChart.data.datasets[0].data = S['TCS.NS'].hist;
         lineChart.data.datasets[1].data = S['INFY.NS'].hist;
         lineChart.data.datasets[2].data = S['WIPRO.NS'].hist;
         lineChart.data.datasets[3].data = S['HCLTECH.NS'].hist;
-        lineChart.data.datasets[4].data = S['TECHM.NS'].hist;
+        if (lineChart.data.datasets[4]) lineChart.data.datasets[4].data = S['TECHM.NS'].hist;
         lineChart.data.labels = Array.from({length: S['TCS.NS'].hist.length}, (_, i) => i);
         lineChart.update('none');
       }
