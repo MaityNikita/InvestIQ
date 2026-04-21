@@ -796,6 +796,57 @@
   <!-- SCRIPTS                                     -->
   <!-- ══════════════════════════════════════════ -->
   <script>
+    // ══════════════════════════════════════════════════
+    //  LIVE DATA INTEGRATION
+    // ══════════════════════════════════════════════════
+    const API = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost' ? `${window.location.protocol}//${window.location.host}` : '';
+    const STOCKS = [
+      { name: 'Tata Consultancy', symbol: 'TCS.NS', sector: 'IT', base: 3642, rb: 0.35 },
+      { name: 'Infosys Limited', symbol: 'INFY.NS', sector: 'IT', base: 1612, rb: 0.52 },
+      { name: 'Wipro Limited', symbol: 'WIPRO.NS', sector: 'IT', base: 457, rb: 0.58 },
+      { name: 'HCL Technologies', symbol: 'HCLTECH.NS', sector: 'IT', base: 1228, rb: 0.40 },
+      { name: 'Tech Mahindra', symbol: 'TECHM.NS', sector: 'IT', base: 1346, rb: 0.50 }
+    ];
+    let S = {};
+    const N = 40;
+    const rnd = (a, b) => Math.random() * (b - a) + a;
+
+    function initData() {
+      STOCKS.forEach(s => {
+        let p = s.base, h = [];
+        for (let i = 0; i < N; i++) { p += rnd(-s.base * .005, s.base * .006); h.push(p); }
+        S[s.symbol] = { ...s, price: h[h.length - 1], hist: h, risk: Math.min(100, Math.max(8, Math.round(s.rb * 100 + rnd(-10, 10)))) };
+      });
+    }
+    initData();
+
+    async function fetchLiveData() {
+      try {
+        const res = await fetch(`${API}/api/finnhub/all-quotes`);
+        const data = await res.json();
+        if (!data.error && !data.fallback && Object.keys(data).length > 0) {
+          Object.entries(data).forEach(([ticker, info]) => {
+            if (S[ticker]) {
+              S[ticker].price = info.price;
+              S[ticker].hist.push(info.price);
+              if (S[ticker].hist.length > N) S[ticker].hist.shift();
+            }
+          });
+        }
+      } catch (e) {
+        STOCKS.forEach(s => {
+          const st = S[s.symbol];
+          st.price += rnd(-st.base * 0.005, st.base * 0.006);
+          st.hist.push(st.price);
+          if (st.hist.length > N) st.hist.shift();
+          st.risk = Math.min(100, Math.max(5, st.risk + rnd(-1.8, 1.8)));
+        });
+      }
+      setTimeout(updateGraphCharts, 50);
+    }
+
+    setInterval(fetchLiveData, 15000);
+
     // ── CHART DEFAULTS ──
     Chart.defaults.color = '#7A8BA0';
     Chart.defaults.borderColor = 'rgba(255,255,255,0.06)';
@@ -1055,6 +1106,43 @@
         }
       });
     }
+    
+    function updateGraphCharts() {
+      const lineChart = Chart.getChart('lineChart');
+      if (lineChart && S['TCS.NS']) {
+        lineChart.data.datasets[0].data = S['TCS.NS'].hist;
+        lineChart.data.datasets[1].data = S['INFY.NS'].hist;
+        lineChart.data.datasets[2].data = S['WIPRO.NS'].hist;
+        lineChart.data.datasets[3].data = S['HCLTECH.NS'].hist;
+        lineChart.data.datasets[4].data = S['TECHM.NS'].hist;
+        lineChart.data.labels = Array.from({length: S['TCS.NS'].hist.length}, (_, i) => i);
+        lineChart.update('none');
+      }
+
+      const barChart = Chart.getChart('barChart');
+      if (barChart && S['TCS.NS']) {
+        barChart.data.datasets[0].data = [S['TCS.NS'].price, S['INFY.NS'].price, S['WIPRO.NS'].price, S['HCLTECH.NS'].price, S['TECHM.NS'].price];
+        barChart.update('none');
+      }
+
+      const riskRadar = Chart.getChart('riskRadar');
+      if (riskRadar && S['TCS.NS']) {
+        riskRadar.data.datasets[0].data[0] = S['TCS.NS'].risk;
+        riskRadar.data.datasets[1].data[0] = S['INFY.NS'].risk;
+        riskRadar.data.datasets[2].data[0] = S['WIPRO.NS'].risk;
+        riskRadar.update('none');
+      }
+
+      const volBar = Chart.getChart('volatilityBar');
+      if (volBar && S['TCS.NS']) {
+        volBar.data.datasets[0].data = [S['TCS.NS'].risk, S['INFY.NS'].risk, S['WIPRO.NS'].risk, S['HCLTECH.NS'].risk, S['TECHM.NS'].risk];
+        volBar.update('none');
+      }
+    }
+
+    // Call fetchLiveData immediately to override hardcoded mock arrays on standard dashboard
+    setTimeout(() => { fetchLiveData(); }, 500);
+
   </script>
 
 </body>

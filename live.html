@@ -2620,6 +2620,7 @@
       });
 
       document.getElementById('ts').textContent = new Date().toLocaleTimeString();
+      if (typeof updateAnalyticsCharts === 'function') updateAnalyticsCharts();
       loopCount++;
     }
 
@@ -3633,6 +3634,7 @@
               badge.dataset.fhSet = '1';
               badge.title = 'Powered by Finnhub Real-Time Data';
             }
+            if (typeof updateAnalyticsCharts === 'function') updateAnalyticsCharts();
             return;
           }
         } catch (e) { }
@@ -3648,6 +3650,7 @@
               if (S[ticker].hist.length > N + 10) S[ticker].hist.shift();
             }
           });
+          if (typeof updateAnalyticsCharts === 'function') updateAnalyticsCharts();
         } catch (e) { }
       }
 
@@ -3674,12 +3677,184 @@
       }
 
       // Fire immediately on load, then re-fetch every 15s (Finnhub is fast)
+      init();
       fetchLiveData();
       fetchIndices();
       setInterval(fetchLiveData, 15000);
       setInterval(fetchIndices, 30000);
     })();
 
+
+    // ══════════════════════════════════════════════════
+    //  ANALYTICS TAB CHARTS (Powered by Live Data)
+    // ══════════════════════════════════════════════════
+    Chart.defaults.color = '#7A8BA0';
+    Chart.defaults.borderColor = 'rgba(255,255,255,0.06)';
+    Chart.defaults.font.family = "'DM Sans', sans-serif";
+
+    let anCharts = {};
+    let analyticsInit = false;
+
+    function initAnalyticsCharts() {
+      if (analyticsInit) return;
+      const tcs = S['TCS.NS'] || STOCKS[0];
+      const infy = S['INFY.NS'] || STOCKS[1];
+      const wipro = S['WIPRO.NS'] || STOCKS[2];
+      const hcl = S['HCLTECH.NS'] || STOCKS[3];
+      
+      let labelsArr = Array.from({length: N}, (_, i) => i);
+
+      if (document.getElementById('anLineChart')) {
+        anCharts.line = new Chart(document.getElementById('anLineChart'), {
+          type: 'line',
+          data: {
+            labels: labelsArr,
+            datasets: [
+              { label: 'TCS', data: tcs.hist || [], borderColor: '#F5C842', backgroundColor: 'rgba(245,200,66,0.08)', fill: true, tension: 0.4, borderWidth: 2.5, pointRadius: 0 },
+              { label: 'Infosys', data: infy.hist || [], borderColor: '#00D97E', backgroundColor: 'rgba(0,217,126,0.06)', fill: true, tension: 0.4, borderWidth: 2.5, pointRadius: 0 },
+              { label: 'Wipro', data: wipro.hist || [], borderColor: '#FF6B6B', backgroundColor: 'rgba(255,107,107,0.05)', fill: true, tension: 0.4, borderWidth: 2, pointRadius: 0 },
+              { label: 'HCL Tech', data: hcl.hist || [], borderColor: '#38BFFF', backgroundColor: 'rgba(56,191,255,0.05)', fill: true, tension: 0.4, borderWidth: 2, pointRadius: 0 }
+            ]
+          },
+          options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 6 } }, tooltip: { mode: 'index', intersect: false } },
+            scales: { x: { display: false }, y: { ticks: { callback: v => '₹' + v }, grid: { color: 'rgba(255,255,255,0.04)' } } }
+          }
+        });
+      }
+
+      if (document.getElementById('anBarChart')) {
+        anCharts.bar = new Chart(document.getElementById('anBarChart'), {
+          type: 'bar',
+          data: {
+            labels: ['TCS', 'Infosys', 'Wipro', 'HCL Tech'],
+            datasets: [{
+              label: 'Stock Price (₹)',
+              data: [tcs.price, infy.price, wipro.price, hcl.price],
+              backgroundColor: ['rgba(245,200,66,0.7)', 'rgba(0,217,126,0.7)', 'rgba(255,107,107,0.7)', 'rgba(56,191,255,0.7)'],
+              borderColor: ['#F5C842', '#00D97E', '#FF6B6B', '#38BFFF'],
+              borderWidth: 2, borderRadius: 8
+            }]
+          },
+          options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { callback: v => '₹' + v } } } }
+        });
+      }
+
+      if (document.getElementById('anPerfLine')) {
+        anCharts.perf = new Chart(document.getElementById('anPerfLine'), {
+          type: 'line',
+          data: {
+            labels: ['Q1', 'Q2', 'Q3', 'Q4'],
+            datasets: [
+              { label: 'TCS', data: [8.2, 10.4, 12.1, 15.3], borderColor: '#F5C842', tension: 0.4, borderWidth: 2.5, pointRadius: 4, pointBackgroundColor: '#F5C842' },
+              { label: 'Infosys', data: [6.1, 8.3, 7.9, 11.2], borderColor: '#00D97E', tension: 0.4, borderWidth: 2.5, pointRadius: 4, pointBackgroundColor: '#00D97E' },
+              { label: 'Wipro', data: [2.3, 1.8, -0.5, -2.1], borderColor: '#FF6B6B', tension: 0.4, borderWidth: 2, pointRadius: 3, pointBackgroundColor: '#FF6B6B' },
+              { label: 'HCL Tech', data: [4.5, 5.2, 6.8, 7.1], borderColor: '#38BFFF', tension: 0.4, borderWidth: 2, pointRadius: 3, pointBackgroundColor: '#38BFFF' }
+            ]
+          },
+          options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 6 } } }, scales: { x: { grid: { display: false } }, y: { grid: { color: 'rgba(255,255,255,0.04)' } } } }
+        });
+      }
+
+      if (document.getElementById('anRiskRadar')) {
+        anCharts.risk = new Chart(document.getElementById('anRiskRadar'), {
+          type: 'radar',
+          data: {
+            labels: ['Volatility', 'Beta', 'Max Drawdown', 'Sharpe Ratio', 'VaR'],
+            datasets: [
+              { label: 'TCS', data: [tcs.risk, 55, 30, 80, 45], borderColor: '#F5C842', backgroundColor: 'rgba(245,200,66,0.1)', borderWidth: 2, pointBackgroundColor: '#F5C842' },
+              { label: 'Infosys', data: [infy.risk, 40, 20, 85, 30], borderColor: '#00D97E', backgroundColor: 'rgba(0,217,126,0.1)', borderWidth: 2, pointBackgroundColor: '#00D97E' },
+              { label: 'Wipro', data: [wipro.risk, 80, 70, 30, 80], borderColor: '#FF6B6B', backgroundColor: 'rgba(255,107,107,0.1)', borderWidth: 2, pointBackgroundColor: '#FF6B6B' }
+            ]
+          },
+          options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 6 } } }, scales: { r: { grid: { color: 'rgba(255,255,255,0.06)' }, angleLines: { color: 'rgba(255,255,255,0.06)' }, pointLabels: { color: '#7A8BA0' }, ticks: { display: false } } } }
+        });
+      }
+
+      if (document.getElementById('anVolBar')) {
+        anCharts.vol = new Chart(document.getElementById('anVolBar'), {
+          type: 'bar',
+          data: {
+            labels: ['TCS', 'Infosys', 'Wipro', 'HCL Tech'],
+            datasets: [{
+              label: 'Risk Score',
+              data: [tcs.risk, infy.risk, wipro.risk, hcl.risk],
+              backgroundColor: ['rgba(245,200,66,0.6)', 'rgba(0,217,126,0.6)', 'rgba(255,107,107,0.6)', 'rgba(56,191,255,0.6)'],
+              borderColor: ['#F5C842', '#00D97E', '#FF6B6B', '#38BFFF'], borderWidth: 2, borderRadius: 8
+            }]
+          },
+          options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { color: 'rgba(255,255,255,0.04)' } }, y: { grid: { display: false } } } }
+        });
+      }
+
+      if (document.getElementById('anSectorDonut')) {
+        anCharts.donut = new Chart(document.getElementById('anSectorDonut'), {
+          type: 'doughnut',
+          data: {
+            labels: ['IT Services', 'Cloud & SaaS', 'Consulting', 'Product Eng.'],
+            datasets: [{ data: [45, 25, 18, 12], backgroundColor: ['#F5C842', '#00D97E', '#38BFFF', '#A78BFA'], borderColor: '#111927', borderWidth: 3 }]
+          },
+          options: { responsive: true, maintainAspectRatio: false, cutout: '65%', plugins: { legend: { display: false } } }
+        });
+      }
+
+      if (document.getElementById('anSectorBar')) {
+        anCharts.sector = new Chart(document.getElementById('anSectorBar'), {
+          type: 'bar',
+          data: {
+            labels: ['IT Services', 'Cloud & SaaS', 'Consulting', 'Product Eng.'],
+            datasets: [
+              { label: 'Q3', data: [12.4, 18.2, 8.1, 14.7], backgroundColor: 'rgba(245,200,66,0.4)', borderColor: '#F5C842', borderWidth: 1, borderRadius: 6 },
+              { label: 'Q4', data: [15.1, 22.5, 9.8, 16.3], backgroundColor: 'rgba(0,217,126,0.4)', borderColor: '#00D97E', borderWidth: 1, borderRadius: 6 }
+            ]
+          },
+          options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 6 } } }, scales: { x: { grid: { display: false } }, y: { grid: { color: 'rgba(255,255,255,0.04)' } } } }
+        });
+      }
+
+      analyticsInit = true;
+    }
+
+    function updateAnalyticsCharts() {
+      if (!analyticsInit) return;
+      const tcs = S['TCS.NS'] || STOCKS[0];
+      const infy = S['INFY.NS'] || STOCKS[1];
+      const wipro = S['WIPRO.NS'] || STOCKS[2];
+      const hcl = S['HCLTECH.NS'] || STOCKS[3];
+
+      if (anCharts.line) {
+        anCharts.line.data.datasets[0].data = tcs.hist || [];
+        anCharts.line.data.datasets[1].data = infy.hist || [];
+        anCharts.line.data.datasets[2].data = wipro.hist || [];
+        anCharts.line.data.datasets[3].data = hcl.hist || [];
+        anCharts.line.update('none');
+      }
+
+      if (anCharts.bar) {
+        anCharts.bar.data.datasets[0].data = [tcs.price, infy.price, wipro.price, hcl.price];
+        anCharts.bar.update('none');
+      }
+
+      if (anCharts.risk) {
+        anCharts.risk.data.datasets[0].data[0] = tcs.risk;
+        anCharts.risk.data.datasets[1].data[0] = infy.risk;
+        anCharts.risk.data.datasets[2].data[0] = wipro.risk;
+        anCharts.risk.update('none');
+      }
+
+      if (anCharts.vol) {
+        anCharts.vol.data.datasets[0].data = [tcs.risk, infy.risk, wipro.risk, hcl.risk];
+        anCharts.vol.update('none');
+      }
+    }
+
+    const analyticsTabBtn = document.getElementById('tab-analytics');
+    if (analyticsTabBtn) {
+      analyticsTabBtn.addEventListener('click', () => {
+        if (!analyticsInit) setTimeout(initAnalyticsCharts, 150);
+      });
+    }
 
     // ══════════════════════════════════════════════════
     //  EMBEDDED CHATBOT
